@@ -1,0 +1,153 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Mail, Phone, MapPin, ExternalLink, Globe } from 'lucide-react';
+import { useTranslation } from '../i18n/LanguageContext';
+import { Logo } from './Logo';
+import { NewsletterForm } from './NewsletterForm';
+
+export const Footer: React.FC = () => {
+  const { t } = useTranslation();
+  const currentYear = new Date().getFullYear();
+
+  const programs = [
+    { id: 'research-and-study', nameKey: 'programs.p1Title' },
+    { id: 'advocacy', nameKey: 'programs.p2Title' },
+    { id: 'training-and-awareness', nameKey: 'programs.p3Title' },
+    { id: 'b2b-bridge', nameKey: 'programs.p4Title' },
+    { id: 'investment-bridge', nameKey: 'programs.p5Title' },
+    { id: 'member-networking-and-jobs', nameKey: 'programs.p6Title' },
+    { id: 'international-relations', nameKey: 'programs.p7Title' },
+  ];
+
+  return (
+    <footer className="bg-emerald-950 text-emerald-100 border-t border-emerald-900/60 pt-16 pb-8 transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+          {/* Column 1: Brand & Identity */}
+          <div className="space-y-4">
+            <Logo variant="light" size="md" />
+            <p className="text-sm text-emerald-200/80 leading-relaxed pt-2">
+              {t('brandTagline')}
+            </p>
+            <div className="pt-2 space-y-2 text-sm text-emerald-200/90">
+              <div className="flex items-center gap-2.5">
+                <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Addis Ababa / Finfinnee, Oromia, Ethiopia</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Phone className="w-4 h-4 text-amber-400 shrink-0" />
+                <a href="tel:+251911000000" className="hover:text-amber-300 transition-colors">
+                  +251 91 100 0000 / +251 11 000 0000
+                </a>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Mail className="w-4 h-4 text-amber-400 shrink-0" />
+                <a href="mailto:info@ohpea.org" className="hover:text-amber-300 transition-colors">
+                  info@ohpea.org
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Column 2: 7 Programs */}
+          <div>
+            <h3 className="text-base font-semibold text-amber-400 uppercase tracking-wider mb-4">
+              {t('footer.colPrograms')}
+            </h3>
+            <ul className="space-y-2.5 text-sm">
+              {programs.map((p) => (
+                <li key={p.id}>
+                  <Link
+                    to={`/programs/${p.id}`}
+                    className="hover:text-amber-300 transition-colors flex items-center justify-between group"
+                  >
+                    <span>{t(p.nameKey as any)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 3: Useful Links */}
+          <div>
+            <h3 className="text-base font-semibold text-amber-400 uppercase tracking-wider mb-4">
+              {t('footer.colLinks')}
+            </h3>
+            <ul className="space-y-2.5 text-sm">
+              <li>
+                <Link to="/about" className="hover:text-amber-300 transition-colors">
+                  {t('nav.about')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/membership" className="hover:text-amber-300 transition-colors">
+                  {t('nav.membership')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/register" className="text-amber-400 font-medium hover:text-amber-300 transition-colors">
+                  {t('hero.ctaRegister')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/updates" className="hover:text-amber-300 transition-colors">
+                  {t('nav.updates')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-amber-300 transition-colors">
+                  {t('nav.contact')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/member-area" className="hover:text-amber-300 transition-colors flex items-center gap-1.5">
+                  <span>{t('nav.memberArea')}</span>
+                  <span className="text-[10px] bg-emerald-900 text-amber-300 px-1.5 py-0.5 rounded border border-amber-400/30">
+                    {t('common.comingSoon')}
+                  </span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/resources" className="hover:text-amber-300 transition-colors flex items-center gap-1.5">
+                  <span>{t('nav.resources')}</span>
+                  <span className="text-[10px] bg-emerald-900 text-amber-300 px-1.5 py-0.5 rounded border border-amber-400/30">
+                    {t('common.comingSoon')}
+                  </span>
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Newsletter & Contact */}
+          <div>
+            <h3 className="text-base font-semibold text-amber-400 uppercase tracking-wider mb-4">
+              {t('footer.colContact')}
+            </h3>
+            <p className="text-sm text-emerald-200/80 mb-4">
+              {t('home.stayTunedSubtitle')}
+            </p>
+            <NewsletterForm variant="compact" />
+          </div>
+        </div>
+
+        {/* Bottom separator */}
+        <div className="border-t border-emerald-900 pt-8 mt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-emerald-300/70">
+          <div>
+            &copy; {currentYear} {t('brandName')}. {t('footer.rights')}
+          </div>
+          <div className="flex flex-wrap items-center gap-6">
+            <Link to="/privacy" className="hover:text-amber-300 transition-colors">
+              {t('footer.privacy')}
+            </Link>
+            <Link to="/terms" className="hover:text-amber-300 transition-colors">
+              {t('footer.terms')}
+            </Link>
+            <span className="text-emerald-400/80">
+              {t('common.websiteBy')}
+            </span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
