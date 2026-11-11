@@ -9,65 +9,25 @@ import {
   Partner,
   Announcement,
   Activity,
-  SiteSettings,
   LookupData,
   PublicStats,
 } from '../types.js';
+import { SiteSettings as ApiSiteSettings } from '../lib/ohpea-api-client.js';
 
 export const fallbackStats: PublicStats = {
-  totalMembers: 512,
-  accreditedHotels: 87,
-  certifiedGuides: 143,
-  trainingGraduates: 320,
+  totalMembers: 0,
+  accreditedHotels: 0,
+  certifiedGuides: 0,
+  trainingGraduates: 0,
 };
 
-export const fallbackSiteSettings: SiteSettings = {
-  orgName: {
-    en: 'Oromia Tourism & Hospitality Professionals Association (OHPEA)',
-    om: 'Waldaa Ogeeyyii Tuurizimii fi Keessummeessuu Oromiyaa (OHPEA)',
-    am: 'የኦሮሚያ ቱሪዝም እና መስተንግዶ ባለሙያዎች ማህበር (OHPEA)',
-    ar: 'جمعية مهنيي السياحة والضيافة في أوروميا (OHPEA)',
-    fr: 'Association des professionnels du tourisme et de l\'hôtellerie d\'Oromia (OHPEA)',
-  },
-  tagline: {
-    en: 'Professionalism, Quality, and Sustainable Tourism for Oromia',
-    om: 'Ogeessummaa, Qulqullina fi Tuurizimii Itti Fufiinsa Qabu Oromiyaaf',
-    am: 'ሙያዊነት፣ ጥራት እና ዘላቂ ቱሪዝም ለኦሮሚያ',
-    ar: 'المهنية والجودة والسياحة المستدامة لأوروميا',
-    fr: 'Professionnalisme, qualité et tourisme durable pour l\'Oromia',
-  },
-  mission: {
-    en: 'To unite, empower, and champion hospitality and tourism professionals through capacity building, high standards, industry advocacy, and ethical practice.',
-    om: 'Ogeeyyii damee keessummeessaa fi tuurizimii tokkummaan ijaaruu, dandeettii isaanii gabbisuu fi guddina dinagdee biyyaatiif gumaachuu.',
-    am: 'የሆስፒታሊቲ እና ቱሪዝም ባለሙያዎችን በማስተባበር፣ አቅማቸውን በማሳደግ እና የዘርፉን ተወዳዳሪነት በማጠናከር ዘላቂ ልማትን ማረጋገጥ።',
-    ar: 'توحيد وتمكين ممارسي الضيافة والسياحة من خلال بناء القدرات والمعايير الرفيعة والمناصرة المهنية.',
-    fr: 'Fédérer et valoriser les professionnels du tourisme et de l\'hôtellerie grâce au renforcement des compétences et à l\'excellence.',
-  },
-  vision: {
-    en: 'To position Oromia as East Africa’s premier, sustainably developed, and service-exemplary destination powered by world-class certified professionals.',
-    om: 'Oromiyaa addunyaarratti bakka tuurizimii beekamaa fi tajaajila gaarii qabu taasisuu.',
-    am: 'ኦሮሚያን በምስራቅ አፍሪካ ግንባር ቀደም፣ ጥራት ያለው አገልግሎት የሚሰጥባት የቱሪዝም መዳረሻ ማድረግ።',
-    ar: 'ترسيخ مكانة أوروميا كوجهة سياحية رائدة ومستدامة ومثالية في شرق إفريقيا.',
-    fr: 'Positionner l\'Oromia comme une destination phare et durable en Afrique de l\'Est.',
-  },
-  contactPhones: ['+251 11 550 4422', '+251 91 123 4567'],
-  contactEmails: ['info@ohpea.org', 'contact@ohpea.org'],
-  address: {
-    en: 'Finfinne (Addis Ababa), Bole Sub-city, Oromia Tourism Commission Building, 4th Floor',
-    om: 'Finfinnee, Kutaa Magaalaa Boolee, Gamoo Koomishinii Tuurizimii Oromiyaa, Abbaa Dhaabaa 4ffaa',
-    am: 'አዲስ አበባ፣ ቦሌ ክፍለ ከተማ፣ የኦሮሚያ ቱሪዝም ኮሚሽን ህንፃ፣ 4ኛ ፎቅ',
-    ar: 'فينفيني (أديس أبابا)، مبنى مفوضية السياحة بأوروميا، الطابق الرابع',
-    fr: 'Finfinne (Addis-Abeba), Immeuble de la Commission du tourisme d\'Oromia, 4e étage',
-  },
-  mapLink: 'https://www.openstreetmap.org/#map=16/9.0105/38.7610',
-  socialLinks: {
-    facebook: 'https://facebook.com/ohpea.official',
-    telegram: 'https://t.me/ohpea_oromia',
-    linkedin: 'https://linkedin.com/company/ohpea',
-    twitter: 'https://twitter.com/ohpea_oromia',
-    youtube: 'https://youtube.com/@ohpea_oromia',
-  },
-  workingHours: 'Mon - Fri: 8:30 AM - 5:30 PM (EAT)',
+export const fallbackSiteSettings: ApiSiteSettings = {
+  name: 'OHPEA',
+  tagline: 'Oromia Hospitality & Tourism Professionals Association',
+  taglineOm: 'Waldaa Ogeeyyii Keessummeessuu fi Tuuriizimii Oromiyaa',
+  email: 'info@ohpea.org',
+  phone: '+251 11 550 4422',
+  address: 'Finfinnee, Oromia, Ethiopia',
 };
 
 export const fallbackPrograms: Program[] = [

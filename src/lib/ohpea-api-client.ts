@@ -32,11 +32,11 @@ type Query = Record<string, string | number | boolean | undefined | null>;
 export class OhpeaPublicClient {
   private baseUrl: string;
   constructor(rawBase: string) {
-    this.baseUrl = rawBase.replace(/\/+$/, '').replace(/\/api$/, '') + '/api';
+    this.baseUrl = rawBase.replace(/\/+$/, '');
   }
 
   private url(path: string, query?: Query) {
-    const u = new URL(this.baseUrl + path);
+    const u = new URL(this.baseUrl + (path.startsWith('/') ? '' : '/') + path);
     if (query) for (const [k, v] of Object.entries(query))
       if (v !== undefined && v !== null && v !== '') u.searchParams.set(k, String(v));
     return u.toString();
