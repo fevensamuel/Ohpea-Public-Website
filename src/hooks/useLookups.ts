@@ -9,22 +9,73 @@ export const useLookups = () => {
 
   useEffect(() => {
     let mounted = true;
-    api.getRegions()
-      .then((regions) => {
-        if (mounted && Array.isArray(regions) && regions.length > 0) {
-          setLookups({
-            ...fallbackLookups,
-            regions: regions.map((r: Region) => ({
-              id: r.id,
-              code: r.id,
-              label: { en: r.name, om: r.name, am: r.name, ar: r.name, fr: r.name },
-              woredas: r.woredas || [],
-            })),
-          });
-        }
-      })
-      .catch(() => {
-        if (mounted) setLookups(fallbackLookups);
+    Promise.allSettled([
+      api.getRegions(),
+      api.getGraduationLevels(),
+      api.getFieldsOfStudy(),
+    ])
+      .then(([regionsResult, graduationResult, fieldsResult]) => {
+        if (!mounted) return;
+
+        const toLookupItem = (value: unknown, index: number) => {
+          if (!value || typeof value !== 'object') return null;
+          const item = value as Record<string, unknown>;
+          const id = typeof item.id === 'string' ? item.id : typeof item.code === 'string' ? item.code : `lookup-${index}`;
+          const code = typeof item.code === 'string' ? item.code : id;
+          const rawLabel = item.label;
+          const label = rawLabel && typeof rawLabel === 'object'
+            ? rawLabel as Record<string, unknown>
+            : undefined;
+          const name = typeof rawLabel === 'string'
+            ? rawLabel
+            : typeof item.name === 'string'
+              ? item.name
+              : typeof item.localizedLabel === 'string'
+                ? item.localizedLabel
+                : code;
+
+          return {
+            id,
+            code,
+            label: {
+              en: typeof label?.en === 'string' ? label.en : name,
+              om: typeof label?.om === 'string' ? label.om : name,
+              am: typeof label?.am === 'string' ? label.am : name,
+              ar: typeof label?.ar === 'string' ? label.ar : name,
+              fr: typeof label?.fr === 'string' ? label.fr : name,
+            },
+          };
+        };
+
+        const regions = regionsResult.status === 'fulfilled' && Array.isArray(regionsResult.value)
+          ? regionsResult.value
+          : [];
+        const graduationLevels = graduationResult.status === 'fulfilled' && Array.isArray(graduationResult.value)
+          ? graduationResult.value.map(toLookupItem).filter((item): item is NonNullable<typeof item> => item !== null)
+          : [];
+        const fieldsOfStudy = fieldsResult.status === 'fulfilled' && Array.isArray(fieldsResult.value)
+          ? fieldsResult.value.map(toLookupItem).filter((item): item is NonNullable<typeof item> => item !== null)
+          : [];
+
+        setLookups({
+          ...fallbackLookups,
+          regions: regions.length
+            ? regions.map((region: Region, index) => {
+                const name = typeof region?.name === 'string'
+                  ? region.name
+                  : typeof region?.id === 'string'
+                    ? region.id
+                    : `Region ${index + 1}`;
+                return {
+                  id: region?.id || `region-${index}`,
+                  code: region?.id || `region-${index}`,
+                  label: { en: name, om: name, am: name, ar: name, fr: name },
+                };
+              })
+            : fallbackLookups.regions,
+          graduationLevels: graduationLevels.length ? graduationLevels : fallbackLookups.graduationLevels,
+          fieldsOfStudy: fieldsOfStudy.length ? fieldsOfStudy : fallbackLookups.fieldsOfStudy,
+        });
       })
       .finally(() => {
         if (mounted) setLoading(false);

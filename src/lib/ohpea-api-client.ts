@@ -76,9 +76,15 @@ export class OhpeaPublicClient {
   getPartners      = () => this.call<Partner[]>('GET', '/public/partners');
   getActivities    = () => this.call<Activity[]>('GET', '/public/activities');
   getRegions       = () => this.call<Region[]>('GET', '/public/lookups/regions');
+  getGraduationLevels = () => this.call<unknown[]>('GET', '/public/lookups/graduation-levels');
+  getFieldsOfStudy = () => this.call<unknown[]>('GET', '/public/lookups/fields');
 
   // ── WRITE ────────────────────────────────────────────
-  submitRegistration(form: RegistrationForm) {
+  submitRegistration(form: RegistrationForm | FormData) {
+    if (form instanceof FormData) {
+      return this.call<{ registrationId?: string }>('POST', '/public/registrations', { form });
+    }
+
     const fd = new FormData();
     fd.append('fullName', form.fullName);
     fd.append('email', form.email);

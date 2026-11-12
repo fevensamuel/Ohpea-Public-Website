@@ -1,300 +1,350 @@
-import React, { useState, useEffect } from 'react';
-import {
-  User,
-  Mail,
-  Phone,
-  Calendar,
-  Briefcase,
-  GraduationCap,
-  Building,
-  MapPin,
-  CreditCard,
-  FileText,
-  CheckCircle2,
-  AlertCircle,
-  ArrowRight,
-  ArrowLeft,
-  RotateCcw,
-} from 'lucide-react';
+import React, { useState } from 'react';
+import { z } from 'zod';
+import { Controller, useForm } from 'react-hook-form';
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
 import { useLookups } from '../hooks/useLookups.js';
 import { PageBanner } from '../components/PageBanner.js';
-import { StepIndicator } from '../components/registration/StepIndicator.js';
-import { FileUpload } from '../components/registration/FileUpload.js';
-import { SuccessPanel } from '../components/registration/SuccessPanel.js';
-import { OtpInput } from '../components/registration/OtpInput.js';
-import { api, ApiError, RegistrationForm } from '../lib/ohpea-api-client.js';
+import { api, ApiError } from '../lib/ohpea-api-client.js';
 
-interface FormDataState {
-  // Step 1: Personal
-  fullName: string;
-  phone: string;
-  email: string;
-  gender: 'male' | 'female' | '';
-  dob: string;
-  // Step 2: Work & Education
-  graduationLevel: string;
-  fieldOfStudy: string;
-  sectorType: string;
-  sector: string;
-  organization: string;
-  jobTitle: string;
-  profCategory: string;
-  // Step 3: Location & ID
-  region: string;
-  town: string;
-  idType: 'fayda' | 'kebele' | 'passport';
-  idNumber: string;
-  // Step 5: Consent
-  consent: boolean;
-}
+const isFile = (value: unknown): value is File =>
+  typeof File !== 'undefined' && value instanceof File;
 
-const INITIAL_FORM: FormDataState = {
+const registrationSchema = z.object({
+  membershipCategory: z.string().min(1, 'Please select a membership category.')
+    .refine((value) => ['Professional', 'Entrepreneur', 'Corporate', 'Associate'].includes(value), 'Select a valid membership category.'),
+  fullName: z.string().trim().min(1, 'Full name is required.'),
+  gender: z.string().refine((value): boolean => value === 'Male' || value === 'Female', 'Please select a gender.'),
+  dateOfBirth: z.string(),
+  nationality: z.string().trim().min(1, 'Nationality is required.'),
+  nationalId: z.string(),
+  phone: z.string().trim().min(1, 'Phone number is required.')
+    .regex(/^\+251[\s-]?[97](?:[\s-]?\d){8}$/, 'Enter a phone number in +251 format.'),
+  email: z.string().trim().min(1, 'Email is required.').email('Enter a valid email address.'),
+  region: z.string(),
+  zoneSubCity: z.string(),
+  woreda: z.string(),
+  cityTown: z.string(),
+  emergencyContactName: z.string(),
+  emergencyContactPhone: z.string(),
+  employmentStatus: z.enum(['Employed', 'Self-Employed', 'Freelancer', 'Job Seeker']),
+  organization: z.string(),
+  jobTitle: z.string(),
+  businessTin: z.string(),
+  yearEstablished: z.string(),
+  industrySubSectors: z.array(z.string()),
+  highestQualification: z.string(),
+  fieldOfStudy: z.string(),
+  institutionName: z.string(),
+  coreSkills: z.string(),
+  areasOfExpertise: z.array(z.string()),
+  areasOfInterest: z.array(z.string()),
+  idDocument: z.custom<File | null>((value): value is File | null => value === null || isFile(value))
+    .refine((value): boolean => value !== null, 'Please upload your ID document.'),
+  cvCompanyProfile: z.custom<File | null>((value): value is File | null => value === null || isFile(value))
+    .refine((value): boolean => value !== null, 'Please upload your CV or company profile.'),
+  academicCertificates: z.array(z.custom<File>(isFile)),
+  declaration: z.boolean().refine((value) => value, 'Please confirm the declaration.'),
+});
+
+type RegistrationValues = z.infer<typeof registrationSchema>;
+type RegistrationField = keyof RegistrationValues;
+
+const defaultValues: RegistrationValues = {
+  membershipCategory: '',
   fullName: '',
+  gender: '',
+  dateOfBirth: '',
+  nationality: 'Ethiopian',
+  nationalId: '',
   phone: '',
   email: '',
-  gender: 'male',
-  dob: '',
-  graduationLevel: 'first_degree',
-  fieldOfStudy: 'hospitality_mgt',
-  sectorType: 'private',
-  sector: 'hotel',
+  region: '',
+  zoneSubCity: '',
+  woreda: '',
+  cityTown: '',
+  emergencyContactName: '',
+  emergencyContactPhone: '',
+  employmentStatus: 'Employed',
   organization: '',
   jobTitle: '',
-  profCategory: 'practitioner',
-  region: 'reg-east-shewa',
-  town: '',
-  idType: 'fayda',
-  idNumber: '',
-  consent: false,
+  businessTin: '',
+  yearEstablished: '',
+  industrySubSectors: [],
+  highestQualification: '',
+  fieldOfStudy: '',
+  institutionName: '',
+  coreSkills: '',
+  areasOfExpertise: [],
+  areasOfInterest: [],
+  idDocument: null,
+  cvCompanyProfile: null,
+  academicCertificates: [],
+  declaration: false,
 };
 
-const STORAGE_KEY = 'ohpea_reg_draft';
+const industrySubSectors = [
+  'Hotel',
+  'Restaurant',
+  'Tour Agency',
+  'Travel Agency',
+  'Tour Operator',
+  'Tour Guiding',
+  'Lodge / Resort',
+  'Catering',
+  'Events and Conference',
+  'Tourism Education / Training',
+  'Other',
+];
+
+const expertiseAreas = [
+  'Hotel and accommodation management',
+  'Food preparation and culinary arts',
+  'Restaurant and food service',
+  'Tour guiding and tour operations',
+  'Travel agency and ticketing',
+  'Event and conference management',
+  'Tourism marketing and promotion',
+  'Hospitality training and education',
+  'Tourism research and planning',
+  'Customer service',
+  'Other',
+];
+
+const interestAreas = [
+  'Professional training and capacity building',
+  'Networking and job opportunities',
+  'Research and tourism development',
+  'Advocacy for hospitality and tourism professionals',
+  'Quality standards and service improvement',
+  'Sustainable tourism',
+  'Business and investment opportunities',
+  'Other',
+];
+
+const fieldClassName =
+  'w-full rounded-xl border border-stone-200 bg-stone-50/70 px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-amber-500 dark:border-stone-700 dark:bg-stone-800/60 dark:text-stone-100';
+const labelClassName = 'mb-1.5 block text-sm font-semibold text-stone-700 dark:text-stone-300';
+
+function lookupLabel(item: {
+  label?: Record<string, string | undefined>;
+  localizedLabel?: string;
+  code?: string;
+}, language: string) {
+  const localized = item?.label?.[language];
+  if (typeof localized === 'string') return localized;
+  if (typeof item?.label?.en === 'string') return item.label.en;
+  if (typeof item?.localizedLabel === 'string') return item.localizedLabel;
+  return typeof item?.code === 'string' ? item.code : '';
+}
 
 export const Register: React.FC = () => {
-  const { t, language, isRtl } = useTranslation();
+  const { t, language } = useTranslation();
   const { lookups } = useLookups();
-  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
-  const BackIcon = isRtl ? ArrowRight : ArrowLeft;
-
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormDataState>(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_FORM;
-  });
-
-  const [idFiles, setIdFiles] = useState<File[]>([]);
-  const [credentialFiles, setCredentialFiles] = useState<File[]>([]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionResult, setSubmissionResult] = useState<{
-    memberNo: string;
-    message: string;
-  } | null>(null);
+  const [submissionComplete, setSubmissionComplete] = useState(false);
+  const [submissionError, setSubmissionError] = useState('');
+  const {
+    register,
+    control,
+    handleSubmit,
+    getValues,
+    setError,
+    clearErrors,
+    watch,
+    formState: { errors },
+  } = useForm<RegistrationValues>({ defaultValues });
 
-  // OTP flow state (component memory only, never stored in localStorage / sessionStorage)
-  const [isOtpStep, setIsOtpStep] = useState(false);
-  const [pendingRegistrationId, setPendingRegistrationId] = useState<string | null>(null);
-  const [pendingPhone, setPendingPhone] = useState<string | null>(null);
-  const [otpError, setOtpError] = useState<string | null>(null);
+  const stepFields: RegistrationField[][] = [
+    [
+      'membershipCategory', 'fullName', 'gender', 'dateOfBirth', 'nationality',
+      'nationalId', 'phone', 'email', 'region', 'zoneSubCity', 'woreda',
+      'cityTown', 'emergencyContactName', 'emergencyContactPhone',
+    ],
+    [
+      'employmentStatus', 'organization', 'jobTitle', 'businessTin',
+      'yearEstablished', 'industrySubSectors', 'highestQualification',
+      'fieldOfStudy', 'institutionName', 'coreSkills', 'areasOfExpertise',
+      'areasOfInterest',
+    ],
+    ['idDocument', 'cvCompanyProfile', 'academicCertificates', 'declaration'],
+  ];
 
-  // Save draft to sessionStorage on change
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-    } catch {}
-  }, [formData]);
+  const validateStep = (step: number) => {
+    const schema = step === 1
+      ? registrationSchema.pick({
+          membershipCategory: true,
+          fullName: true,
+          gender: true,
+          dateOfBirth: true,
+          nationality: true,
+          nationalId: true,
+          phone: true,
+          email: true,
+          region: true,
+          zoneSubCity: true,
+          woreda: true,
+          cityTown: true,
+          emergencyContactName: true,
+          emergencyContactPhone: true,
+        })
+      : step === 2
+        ? registrationSchema.pick({
+            employmentStatus: true,
+            organization: true,
+            jobTitle: true,
+            businessTin: true,
+            yearEstablished: true,
+            industrySubSectors: true,
+            highestQualification: true,
+            fieldOfStudy: true,
+            institutionName: true,
+            coreSkills: true,
+            areasOfExpertise: true,
+            areasOfInterest: true,
+          })
+        : registrationSchema.pick({
+            idDocument: true,
+            cvCompanyProfile: true,
+            academicCertificates: true,
+            declaration: true,
+          });
+    const result = schema.safeParse(getValues());
+    clearErrors();
+    if (result.success) return true;
 
-  const updateField = (field: keyof FormDataState, val: any) => {
-    setFormData((prev) => ({ ...prev, [field]: val }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as RegistrationField;
+      setError(field, { type: 'validation', message: issue.message });
     }
+    return false;
   };
 
-  const validateStep = (step: number): boolean => {
-    const errs: Record<string, string> = {};
-
-    if (step === 1) {
-      if (!formData.fullName.trim()) errs.fullName = t('validation.required');
-      if (!formData.phone.trim()) {
-        errs.phone = t('validation.required');
-      } else if (!/^(\+251|0)?[97]\d{8}$/.test(formData.phone.replace(/[\s-]/g, ''))) {
-        errs.phone = t('validation.invalidPhone');
-      }
-      if (!formData.email.trim()) {
-        errs.email = t('validation.required');
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        errs.email = t('validation.invalidEmail');
-      }
-      if (!formData.dob) errs.dob = t('validation.required');
-    }
-
-    if (step === 2) {
-      if (!formData.organization.trim()) errs.organization = t('validation.required');
-      if (!formData.jobTitle.trim()) errs.jobTitle = t('validation.required');
-    }
-
-    if (step === 3) {
-      if (!formData.town.trim()) errs.town = t('validation.required');
-      if (!formData.idNumber.trim()) errs.idNumber = t('validation.required');
-    }
-
-    if (step === 4) {
-      if (idFiles.length === 0) {
-        errs.idFile = t('register.idDocError');
-      }
-    }
-
-    if (step === 5) {
-      if (!formData.consent) {
-        errs.consent = t('validation.consentRequired');
-      }
-    }
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(prev + 1, 5));
-      window.scrollTo({ top: 300, behavior: 'smooth' });
-    }
-  };
-
-  const handleBack = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
+  const goToStep = (step: number) => {
+    setCurrentStep(step);
+    setSubmissionError('');
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
 
-  // INVARIANT: backend requires send → submit → verify. Do not reorder.
-  const handleVerifyOtp = async (code: string): Promise<boolean> => {
-    const idFile = idFiles[0];
-    if (!idFile) {
-      setOtpError('ID document is required.');
-      return false;
-    }
-
-    setOtpError(null);
-    try {
-      let regId = pendingRegistrationId;
-      if (!regId) {
-        const res = await api.submitRegistration({
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          qualification: formData.graduationLevel,
-          fieldOfStudy: formData.fieldOfStudy,
-          organization: formData.organization,
-          zone: formData.region,
-          idType: formData.idType as RegistrationForm['idType'],
-          idNumber: formData.idNumber,
-          idDocument: idFile,
-          credentialDocs: credentialFiles,
+  const submitApplication = async (values: RegistrationValues) => {
+    const validated = registrationSchema.safeParse(values);
+    if (!validated.success) {
+      const issues = validated.error.issues;
+      for (const issue of issues) {
+        setError(issue.path[0] as RegistrationField, {
+          type: 'validation',
+          message: issue.message,
         });
-        regId = res.registrationId;
-        setPendingRegistrationId(regId);
       }
-
-      await api.verifyRegistrationOtp(formData.phone, code);
-
-      setSubmissionResult({
-        memberNo: regId || `OHPEA-${Date.now().toString().slice(-6)}`,
-        message: 'Your registration has been submitted and verified successfully. The membership committee is reviewing your application.',
-      });
-      sessionStorage.removeItem(STORAGE_KEY);
-      window.scrollTo({ top: 200, behavior: 'smooth' });
-      return true;
-    } catch (err: unknown) {
-      if (err instanceof ApiError) {
-        setOtpError(err.message || t('otp.incorrect'));
-      } else {
-        setOtpError((err as Error).message || t('otp.failed'));
-      }
-      return false;
-    }
-  };
-
-  const handleResendOtp = async () => {
-    setOtpError(null);
-    try {
-      await api.sendRegistrationOtp(formData.phone);
-    } catch (err: unknown) {
-      if (err instanceof ApiError) {
-        setOtpError(err.message);
-      } else {
-        setOtpError((err as Error).message || 'Failed to resend code');
-      }
-    }
-  };
-
-  // INVARIANT: backend requires send → submit → verify. Do not reorder.
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateStep(5)) return;
-
-    const idFile = idFiles[0];
-    if (!idFile) {
-      setErrors({ idFile: t('register.idDocError'), idDocument: t('register.idDocError') });
-      setCurrentStep(4);
+      const firstInvalidField = issues[0]?.path[0] as RegistrationField | undefined;
+      const invalidStep = stepFields.findIndex((fields) =>
+        firstInvalidField ? fields.includes(firstInvalidField) : false
+      );
+      if (invalidStep >= 0) goToStep(invalidStep + 1);
       return;
     }
 
     setIsSubmitting(true);
-    setErrors({});
-    setOtpError(null);
-    try {
-      // 1. Send OTP first
-      await api.sendRegistrationOtp(formData.phone);
-      setPendingPhone(formData.phone);
-      setIsOtpStep(true);
-      window.scrollTo({ top: 300, behavior: 'smooth' });
-    } catch (err: unknown) {
-      if (err instanceof ApiError) {
-        if (err.fields && Object.keys(err.fields).length > 0) {
-          const mapped = { ...err.fields };
-          if (mapped.idDocument) mapped.idFile = mapped.idDocument;
-          setErrors(mapped);
-          if (mapped.fullName || mapped.phone || mapped.email || mapped.dob) {
-            setCurrentStep(1);
-          } else if (mapped.organization || mapped.jobTitle || mapped.qualification || mapped.fieldOfStudy) {
-            setCurrentStep(2);
-          } else if (mapped.zone || mapped.region || mapped.town || mapped.idNumber || mapped.idType) {
-            setCurrentStep(3);
-          } else if (mapped.idDocument || mapped.idFile || mapped.credentialDocs) {
-            setCurrentStep(4);
-          }
+    setSubmissionError('');
+    const payload = new FormData();
+    for (const [key, value] of Object.entries(validated.data)) {
+      if (isFile(value)) {
+        payload.append(key, value);
+      } else if (Array.isArray(value)) {
+        if (value.some(isFile)) {
+          value.filter(isFile).forEach((file) => payload.append(key, file));
         } else {
-          setErrors({ form: err.message || 'Failed to send verification code. Please check your phone number.' });
+          payload.append(key, JSON.stringify(value));
         }
       } else {
-        setErrors({ form: (err as Error).message || 'Failed to send verification code. Please try again.' });
+        payload.append(key, String(value));
       }
+    }
+
+    try {
+      await api.submitRegistration(payload);
+      setSubmissionComplete(true);
+      window.scrollTo({ top: 200, behavior: 'smooth' });
+    } catch (error: unknown) {
+      setSubmissionError(
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'We could not submit your application. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const resetDraft = () => {
-    sessionStorage.removeItem(STORAGE_KEY);
-    setFormData(INITIAL_FORM);
-    setIdFiles([]);
-    setCredentialFiles([]);
-    setErrors({});
-    setPendingRegistrationId(null);
-    setPendingPhone(null);
-    setIsOtpStep(false);
-    setOtpError(null);
-    setCurrentStep(1);
+  const category = watch('membershipCategory');
+  const employmentStatus = watch('employmentStatus');
+  const selectedIndustry = watch('industrySubSectors') || [];
+  const selectedExpertise = watch('areasOfExpertise') || [];
+  const selectedInterests = watch('areasOfInterest') || [];
+
+  const renderCheckboxes = (
+    field: 'industrySubSectors' | 'areasOfExpertise' | 'areasOfInterest',
+    options: string[],
+  ) => {
+    const selected = field === 'industrySubSectors'
+      ? selectedIndustry
+      : field === 'areasOfExpertise'
+        ? selectedExpertise
+        : selectedInterests;
+    return (
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {options.map((option) => (
+          <label key={option} className="flex items-start gap-2.5 rounded-lg border border-stone-200 px-3 py-2.5 text-sm text-stone-700 dark:border-stone-700 dark:text-stone-300">
+            <input
+              type="checkbox"
+              value={option}
+              checked={selected.includes(option)}
+              {...register(field)}
+              className="mt-0.5 accent-emerald-700"
+            />
+            <span>{option}</span>
+          </label>
+        ))}
+      </div>
+    );
   };
+
+  const renderFileField = (
+    name: 'idDocument' | 'cvCompanyProfile' | 'academicCertificates',
+    label: string,
+    multiple = false,
+    required = false,
+  ) => (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <div>
+          <label className={labelClassName}>
+            {label}{required && <span className="text-red-600"> *</span>}
+          </label>
+          <input
+            type="file"
+            multiple={multiple}
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            onChange={(event) => {
+              const files = Array.from(event.target.files || []);
+              field.onChange(multiple ? files : files[0] || null);
+            }}
+            className={`${fieldClassName} file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-800 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white`}
+          />
+          {errors[name]?.message && (
+            <p className="mt-1 text-xs text-red-600">{errors[name]?.message}</p>
+          )}
+        </div>
+      )}
+    />
+  );
+
+  const fieldError = (name: RegistrationField) => errors[name]?.message;
 
   return (
     <div className="space-y-12 pb-16">
@@ -308,545 +358,271 @@ export const Register: React.FC = () => {
         ]}
       />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {submissionResult ? (
-          <SuccessPanel
-            memberNumber={submissionResult.memberNo}
-            fullName={formData.fullName}
-            email={formData.email}
-            phone={formData.phone}
-          />
-        ) : isOtpStep ? (
-          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-10 shadow-sm text-center">
-            <OtpInput
-              phone={pendingPhone || formData.phone}
-              onVerify={handleVerifyOtp}
-              onResend={handleResendOtp}
-            />
-            {otpError && (
-              <div className="max-w-md mx-auto mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs text-red-600 dark:text-red-300">
-                {otpError}
-              </div>
-            )}
-            <div className="mt-6 flex justify-center">
-              <button
-                type="button"
-                onClick={() => setIsOtpStep(false)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white transition cursor-pointer"
-              >
-                <BackIcon className="w-4 h-4" />
-                <span>{t('register.back')}</span>
-              </button>
-            </div>
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        {submissionComplete ? (
+          <div className="rounded-3xl border border-emerald-200 bg-white p-8 text-center shadow-sm dark:border-emerald-900 dark:bg-stone-900 sm:p-12">
+            <CheckCircle2 className="mx-auto mb-5 h-16 w-16 text-emerald-700 dark:text-emerald-400" />
+            <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Thank you</h2>
+            <p className="mx-auto mt-3 max-w-xl text-stone-600 dark:text-stone-300">
+              Your application has been received and is under review.
+            </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-10 shadow-sm">
-            {/* Step Progress Bar */}
-            <StepIndicator
-              currentStep={currentStep}
-              totalSteps={5}
-              onStepClick={(s) => setCurrentStep(s)}
-            />
+          <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-10">
+            <div className="mb-8 grid grid-cols-3 gap-3" aria-label="Registration progress">
+              {['Personal', 'Professional', 'Documents & Submit'].map((title, index) => (
+                <div key={title} className="text-center">
+                  <div className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${
+                    currentStep === index + 1
+                      ? 'bg-amber-500 text-stone-950'
+                      : currentStep > index + 1
+                        ? 'bg-emerald-800 text-white'
+                        : 'bg-stone-200 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <span className={`mt-2 block text-xs ${currentStep === index + 1 ? 'font-bold text-stone-900 dark:text-white' : 'text-stone-500'}`}>
+                    {title}
+                  </span>
+                </div>
+              ))}
+            </div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-6 text-start">
-              {/* STEP 1: Personal Info */}
+            <form
+              noValidate
+              onSubmit={handleSubmit(submitApplication)}
+              className="space-y-7"
+            >
               {currentStep === 1 && (
-                <div className="space-y-6 animate-in fade-in">
-                  <div className="border-b border-stone-100 dark:border-stone-800 pb-4">
-                    <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                      {t('register.step1')}
-                    </h3>
-                    <p className="text-xs text-stone-500">
-                      {t('register.step1Desc')}
-                    </p>
+                <section className="space-y-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-stone-900 dark:text-white">Personal Information</h2>
+                    <p className="mt-1 text-sm text-stone-500">Enter your personal and contact details.</p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {/* Full Name */}
+                  <div>
+                    <label className={labelClassName}>Membership Category <span className="text-red-600">*</span></label>
+                    <select {...register('membershipCategory')} className={fieldClassName}>
+                      <option value="">Select a category</option>
+                      {['Professional', 'Entrepreneur', 'Corporate', 'Associate'].map((item) => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </select>
+                    {fieldError('membershipCategory') && <p className="mt-1 text-xs text-red-600">{fieldError('membershipCategory')}</p>}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.fullName')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input
-                          type="text"
-                          value={formData.fullName}
-                          onChange={(e) => updateField('fullName', e.target.value)}
-                          placeholder="e.g. Tolosa Caala Gutama"
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                            errors.fullName ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                          }`}
-                        />
-                      </div>
-                      {errors.fullName && <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>}
+                      <label className={labelClassName}>Full Name <span className="text-red-600">*</span></label>
+                      <input {...register('fullName')} className={fieldClassName} autoComplete="name" />
+                      {fieldError('fullName') && <p className="mt-1 text-xs text-red-600">{fieldError('fullName')}</p>}
                     </div>
-
-                    {/* Phone Number */}
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.phone')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => updateField('phone', e.target.value)}
-                          placeholder="+251 91 123 4567"
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                            errors.phone ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                          }`}
-                        />
+                    <fieldset>
+                      <legend className={labelClassName}>Gender <span className="text-red-600">*</span></legend>
+                      <div className="flex gap-6 py-2">
+                        {(['Male', 'Female'] as const).map((gender) => (
+                          <label key={gender} className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                            <input type="radio" value={gender} {...register('gender')} className="accent-emerald-700" />
+                            {gender}
+                          </label>
+                        ))}
                       </div>
-                      {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
-                    </div>
-
-                    {/* Email */}
+                      {fieldError('gender') && <p className="text-xs text-red-600">{fieldError('gender')}</p>}
+                    </fieldset>
                     <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.email')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => updateField('email', e.target.value)}
-                          placeholder="tolosa@example.com"
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                            errors.email ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                          }`}
-                        />
-                      </div>
-                      {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+                      <label className={labelClassName}>Date of Birth</label>
+                      <input type="date" {...register('dateOfBirth')} className={fieldClassName} />
                     </div>
-
-                    {/* Gender */}
                     <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.gender')}
-                      </label>
-                      <select
-                        value={formData.gender}
-                        onChange={(e) => updateField('gender', e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-amber-500"
-                      >
-                        <option value="male">{t('form.male')}</option>
-                        <option value="female">{t('form.female')}</option>
+                      <label className={labelClassName}>Nationality</label>
+                      <input {...register('nationality')} className={fieldClassName} />
+                    </div>
+                    <div>
+                      <label className={labelClassName}>National ID / Fayda Number</label>
+                      <input {...register('nationalId')} className={fieldClassName} />
+                    </div>
+                    <div>
+                      <label className={labelClassName}>Phone <span className="text-red-600">*</span></label>
+                      <input {...register('phone')} type="tel" placeholder="+251 91 123 4567" className={fieldClassName} />
+                      {fieldError('phone') && <p className="mt-1 text-xs text-red-600">{fieldError('phone')}</p>}
+                    </div>
+                    <div>
+                      <label className={labelClassName}>Email <span className="text-red-600">*</span></label>
+                      <input {...register('email')} type="email" autoComplete="email" className={fieldClassName} />
+                      {fieldError('email') && <p className="mt-1 text-xs text-red-600">{fieldError('email')}</p>}
+                    </div>
+                    <div>
+                      <label className={labelClassName}>Region / City</label>
+                      <select {...register('region')} className={fieldClassName}>
+                        <option value="">Select a region</option>
+                        {(lookups?.regions || []).map((region) => (
+                          <option key={region?.id || region?.code} value={region?.id || region?.code}>
+                            {lookupLabel(region, language)}
+                          </option>
+                        ))}
                       </select>
                     </div>
-
-                    {/* Date of Birth */}
                     <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.dob')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Calendar className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input
-                          type="date"
-                          value={formData.dob}
-                          onChange={(e) => updateField('dob', e.target.value)}
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                            errors.dob ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                          }`}
-                        />
-                      </div>
-                      {errors.dob && <p className="text-xs text-red-500 mt-1">{errors.dob}</p>}
+                      <label className={labelClassName}>Zone / Sub-City</label>
+                      <input {...register('zoneSubCity')} className={fieldClassName} />
+                    </div>
+                    <div>
+                      <label className={labelClassName}>Woreda</label>
+                      <input {...register('woreda')} className={fieldClassName} />
+                    </div>
+                    <div>
+                      <label className={labelClassName}>City / Town</label>
+                      <input {...register('cityTown')} className={fieldClassName} />
+                    </div>
+                    <div>
+                      <label className={labelClassName}>Emergency Contact Name</label>
+                      <input {...register('emergencyContactName')} className={fieldClassName} />
+                    </div>
+                    <div>
+                      <label className={labelClassName}>Emergency Contact Phone</label>
+                      <input {...register('emergencyContactPhone')} type="tel" className={fieldClassName} />
                     </div>
                   </div>
-                </div>
+                </section>
               )}
 
-              {/* STEP 2: Work & Education */}
               {currentStep === 2 && (
-                <div className="space-y-6 animate-in fade-in">
-                  <div className="border-b border-stone-100 dark:border-stone-800 pb-4">
-                    <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                      {t('register.step2')}
-                    </h3>
-                    <p className="text-xs text-stone-500">
-                      {t('register.step2Desc')}
-                    </p>
+                <section className="space-y-7">
+                  <div>
+                    <h2 className="text-xl font-bold text-stone-900 dark:text-white">Employment, Education & Expertise</h2>
+                    <p className="mt-1 text-sm text-stone-500">Tell us about your professional background and interests.</p>
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {/* Graduation Level */}
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.graduationLevel')}
-                      </label>
-                      <select
-                        value={formData.graduationLevel}
-                        onChange={(e) => updateField('graduationLevel', e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-amber-500"
-                      >
-                        {lookups.graduationLevels.map((lvl) => (
-                          <option key={lvl.code} value={lvl.code}>
-                            {lvl.label[language] || lvl.label.en}
-                          </option>
+                      <label className={labelClassName}>Current Employment Status</label>
+                      <select {...register('employmentStatus')} className={fieldClassName}>
+                        {['Employed', 'Self-Employed', 'Freelancer', 'Job Seeker'].map((status) => (
+                          <option key={status} value={status}>{status}</option>
                         ))}
                       </select>
                     </div>
-
-                    {/* Field of Study */}
                     <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.fieldOfStudy')}
-                      </label>
-                      <select
-                        value={formData.fieldOfStudy}
-                        onChange={(e) => updateField('fieldOfStudy', e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-amber-500"
-                      >
-                        {lookups.fieldsOfStudy.map((fld) => (
-                          <option key={fld.code} value={fld.code}>
-                            {fld.label[language] || fld.label.en}
-                          </option>
-                        ))}
-                      </select>
+                      <label className={labelClassName}>Current Organization / Business Name</label>
+                      <input {...register('organization')} className={fieldClassName} />
                     </div>
-
-                    {/* Sector Type */}
                     <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.sectorType')}
-                      </label>
-                      <select
-                        value={formData.sectorType}
-                        onChange={(e) => updateField('sectorType', e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-amber-500"
-                      >
-                        {lookups.occupationTypes.map((occ) => (
-                          <option key={occ.code} value={occ.code}>
-                            {occ.label[language] || occ.label.en}
-                          </option>
-                        ))}
-                      </select>
+                      <label className={labelClassName}>Job Title</label>
+                      <input {...register('jobTitle')} className={fieldClassName} />
                     </div>
-
-                    {/* Industry Sector */}
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.sector')}
-                      </label>
-                      <select
-                        value={formData.sector}
-                        onChange={(e) => updateField('sector', e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-amber-500"
-                      >
-                        {lookups.sectors.map((sec) => (
-                          <option key={sec.code} value={sec.code}>
-                            {sec.label[language] || sec.label.en}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Employer / Organization */}
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.organization')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Building className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input
-                          type="text"
-                          value={formData.organization}
-                          onChange={(e) => updateField('organization', e.target.value)}
-                          placeholder="e.g. Kuriftu Resort / Haile Grand"
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                            errors.organization ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                          }`}
-                        />
-                      </div>
-                      {errors.organization && <p className="text-xs text-red-500 mt-1">{errors.organization}</p>}
-                    </div>
-
-                    {/* Job Title */}
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.jobTitle')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <Briefcase className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input
-                          type="text"
-                          value={formData.jobTitle}
-                          onChange={(e) => updateField('jobTitle', e.target.value)}
-                          placeholder="e.g. Operations Manager / Executive Chef"
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                            errors.jobTitle ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                          }`}
-                        />
-                      </div>
-                      {errors.jobTitle && <p className="text-xs text-red-500 mt-1">{errors.jobTitle}</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: Location & ID */}
-              {currentStep === 3 && (
-                <div className="space-y-6 animate-in fade-in">
-                  <div className="border-b border-stone-100 dark:border-stone-800 pb-4">
-                    <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                      {t('register.step3')}
-                    </h3>
-                    <p className="text-xs text-stone-500">
-                      {t('register.step3Desc')}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {/* Zone / Region */}
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.region')}
-                      </label>
-                      <select
-                        value={formData.region}
-                        onChange={(e) => updateField('region', e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-amber-500"
-                      >
-                        {lookups.regions.map((reg) => (
-                          <option key={reg.id} value={reg.id}>
-                            {reg.label[language] || reg.label.en}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Town / City */}
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.town')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <MapPin className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input
-                          type="text"
-                          value={formData.town}
-                          onChange={(e) => updateField('town', e.target.value)}
-                          placeholder="e.g. Bishoftu / Adama / Jimma"
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                            errors.town ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                          }`}
-                        />
-                      </div>
-                      {errors.town && <p className="text-xs text-red-500 mt-1">{errors.town}</p>}
-                    </div>
-
-                    {/* ID Type */}
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.idType')}
-                      </label>
-                      <select
-                        value={formData.idType}
-                        onChange={(e) => updateField('idType', e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-amber-500"
-                      >
-                        <option value="fayda">{t('register.idTypeFayda')}</option>
-                        <option value="kebele">{t('register.idTypeKebele')}</option>
-                        <option value="passport">{t('register.idTypePassport')}</option>
-                      </select>
-                    </div>
-
-                    {/* ID Number */}
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.idNumber')} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <CreditCard className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input
-                          type="text"
-                          value={formData.idNumber}
-                          onChange={(e) => updateField('idNumber', e.target.value)}
-                          placeholder="e.g. FIN-9812-4019"
-                          className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                            errors.idNumber ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                          }`}
-                        />
-                      </div>
-                      {errors.idNumber && <p className="text-xs text-red-500 mt-1">{errors.idNumber}</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 4: Documents Upload */}
-              {currentStep === 4 && (
-                <div className="space-y-6 animate-in fade-in">
-                  <div className="border-b border-stone-100 dark:border-stone-800 pb-4">
-                    <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                      {t('register.step4')}
-                    </h3>
-                    <p className="text-xs text-stone-500">
-                      {t('register.step4Desc')}
-                    </p>
-                  </div>
-
-                  <div className="space-y-6">
-                    <FileUpload
-                      label={t('form.idDoc')}
-                      helperText={t('register.idDocHelper')}
-                      files={idFiles}
-                      onChange={setIdFiles}
-                      required
-                      error={errors.idDocument || errors.idFile}
-                    />
-
-                    <FileUpload
-                      label={t('form.credentialDocs')}
-                      helperText={t('register.credentialDocsHelper')}
-                      multiple
-                      maxFiles={5}
-                      files={credentialFiles}
-                      onChange={setCredentialFiles}
-                      error={errors.credentialDocs}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 5: Review & Consent */}
-              {currentStep === 5 && (
-                <div className="space-y-6 animate-in fade-in">
-                  <div className="border-b border-stone-100 dark:border-stone-800 pb-4">
-                    <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-                      {t('register.step5')}
-                    </h3>
-                    <p className="text-xs text-stone-500">
-                      {t('register.step5Desc')}
-                    </p>
-                  </div>
-
-                  {/* Summary Box */}
-                  <div className="bg-stone-50 dark:bg-stone-800/50 rounded-2xl p-6 border border-stone-200 dark:border-stone-700 text-xs space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-stone-400 block font-medium">{t('register.applicantName')}:</span>
-                        <span className="font-bold text-stone-900 dark:text-white text-sm">
-                          {formData.fullName || '—'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-stone-400 block font-medium">{t('register.phoneEmail')}:</span>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200">
-                          {formData.phone} &bull; {formData.email}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-stone-400 block font-medium">{t('register.employment')}:</span>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200">
-                          {formData.jobTitle} {t('register.at')} {formData.organization}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-stone-400 block font-medium">{t('register.qualification')}:</span>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200">
-                          {formData.graduationLevel} ({formData.fieldOfStudy})
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-stone-400 block font-medium">{t('register.location')}:</span>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200">
-                          {formData.town}, {formData.region}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-stone-400 block font-medium">{t('register.identification')}:</span>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200 uppercase">
-                          {formData.idType}: {formData.idNumber}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-stone-400 block font-medium">{t('register.attachedDocs')}:</span>
-                        <span className="font-semibold text-stone-800 dark:text-stone-200">
-                          ID: {idFiles.length > 0 ? idFiles[0].name : '—'} &bull; Credentials: {credentialFiles.length}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Consent checkbox */}
-                  <div className="pt-2">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.consent}
-                        onChange={(e) => updateField('consent', e.target.checked)}
-                        className="mt-1 w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-stone-300"
-                      />
-                      <span className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
-                        {t('form.consentText')}
-                      </span>
-                    </label>
-                    {errors.consent && (
-                      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        {errors.consent}
-                      </p>
+                    {category === 'Entrepreneur' && (
+                      <>
+                        <div>
+                          <label className={labelClassName}>Business TIN</label>
+                          <input {...register('businessTin')} className={fieldClassName} />
+                        </div>
+                        <div>
+                          <label className={labelClassName}>Year Established</label>
+                          <input {...register('yearEstablished')} type="number" min="1900" max={new Date().getFullYear()} className={fieldClassName} />
+                        </div>
+                      </>
                     )}
                   </div>
 
-                  {errors.form && (
-                    <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs text-red-600 dark:text-red-300 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>{errors.form}</span>
+                  <div>
+                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">Industry Sub-Sector</h3>
+                    {renderCheckboxes('industrySubSectors', industrySubSectors)}
+                  </div>
+
+                  <div>
+                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">Education</h3>
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                      <div>
+                        <label className={labelClassName}>Highest Qualification</label>
+                        <select {...register('highestQualification')} className={fieldClassName}>
+                          <option value="">Select qualification</option>
+                          {(lookups?.graduationLevels || []).map((item) => (
+                            <option key={item?.id || item?.code} value={item?.code || item?.id}>
+                              {lookupLabel(item, language)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelClassName}>Field of Study</label>
+                        <select {...register('fieldOfStudy')} className={fieldClassName}>
+                          <option value="">Select field</option>
+                          {(lookups?.fieldsOfStudy || []).map((item) => (
+                            <option key={item?.id || item?.code} value={item?.code || item?.id}>
+                              {lookupLabel(item, language)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className={labelClassName}>Institution Name</label>
+                        <input {...register('institutionName')} className={fieldClassName} />
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+
+                  <div>
+                    <label className={labelClassName}>Core Skills</label>
+                    <textarea {...register('coreSkills')} rows={3} className={fieldClassName} />
+                  </div>
+                  <div>
+                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">Areas of Expertise</h3>
+                    {renderCheckboxes('areasOfExpertise', expertiseAreas)}
+                  </div>
+                  <div>
+                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">Areas of Interest in OHPEA</h3>
+                    {renderCheckboxes('areasOfInterest', interestAreas)}
+                  </div>
+                </section>
               )}
 
-              {/* Navigation Controls */}
-              <div className="flex items-center justify-between pt-6 border-t border-stone-100 dark:border-stone-800">
-                {currentStep > 1 ? (
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold hover:bg-stone-50 dark:hover:bg-stone-800 transition cursor-pointer"
-                  >
-                    <BackIcon className="w-4 h-4" />
-                    <span>{t('register.back')}</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={resetDraft}
-                    className="inline-flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 transition cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>{t('register.reset')}</span>
-                  </button>
-                )}
+              {currentStep === 3 && (
+                <section className="space-y-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-stone-900 dark:text-white">Documents & Declaration</h2>
+                    <p className="mt-1 text-sm text-stone-500">Upload the required documents and review your declaration.</p>
+                  </div>
+                  {renderFileField('idDocument', 'ID Document', false, true)}
+                  {renderFileField('cvCompanyProfile', category === 'Corporate' ? 'Company Profile' : 'CV / Company Profile', false, true)}
+                  {renderFileField('academicCertificates', 'Academic Certificates (optional)', true)}
+                  <div>
+                    <label className="flex items-start gap-3 rounded-xl border border-stone-200 p-4 text-sm leading-relaxed text-stone-700 dark:border-stone-700 dark:text-stone-300">
+                      <input type="checkbox" {...register('declaration')} className="mt-1 accent-emerald-700" />
+                      <span>I certify that all information provided in this application is true and accurate to the best of my knowledge.</span>
+                    </label>
+                    {fieldError('declaration') && <p className="mt-1 text-xs text-red-600">{fieldError('declaration')}</p>}
+                  </div>
+                  {submissionError && (
+                    <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      {submissionError}
+                    </div>
+                  )}
+                </section>
+              )}
 
-                {currentStep < 5 ? (
+              <div className="flex items-center justify-between border-t border-stone-100 pt-5 dark:border-stone-800">
+                {currentStep > 1 ? (
+                  <button type="button" onClick={() => goToStep(currentStep - 1)} className="inline-flex items-center gap-2 rounded-xl border border-stone-300 px-5 py-3 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:text-stone-200">
+                    <ArrowLeft className="h-4 w-4" /> Back
+                  </button>
+                ) : <span />}
+                {currentStep < 3 ? (
                   <button
                     type="button"
-                    onClick={handleNext}
-                    className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs shadow-md transition cursor-pointer"
+                    onClick={() => validateStep(currentStep) && goToStep(currentStep + 1)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-900"
                   >
-                    <span>{t('register.continue')}</span>
-                    <ArrowIcon className="w-4 h-4" />
+                    Continue <ArrowRight className="h-4 w-4" />
                   </button>
                 ) : (
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-lg shadow-amber-500/20 disabled:opacity-50 transition"
+                    onClick={() => validateStep(3)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 text-sm font-bold text-stone-950 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isSubmitting ? (
-                      <span>{t('form.submitting')}</span>
-                    ) : (
-                      <>
-                        <span>{t('form.submit')}</span>
-                        <CheckCircle2 className="w-4 h-4" />
-                      </>
-                    )}
+                    {isSubmitting ? 'Submitting…' : 'Submit Application'}
+                    {!isSubmitting && <CheckCircle2 className="h-4 w-4" />}
                   </button>
                 )}
               </div>
