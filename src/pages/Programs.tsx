@@ -3,24 +3,25 @@ import { useTranslation } from '../i18n/LanguageContext.js';
 import { PageBanner } from '../components/PageBanner.js';
 import { ProgramCard } from '../components/ProgramCard.js';
 import { SectionHeading } from '../components/SectionHeading.js';
-import { api, Program } from '../lib/ohpea-api-client.js';
-import { fallbackPrograms } from '../data/fallbackContent.js';
+import { api } from '../lib/ohpea-api-client.js';
 
 export const Programs: React.FC = () => {
   const { t } = useTranslation();
-  const [programs, setPrograms] = useState<any[]>(fallbackPrograms);
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     api
       .getPrograms()
       .then((data) => {
-        if (mounted && Array.isArray(data) && data.length > 0) {
-          setPrograms(data);
-        }
+        if (mounted) setPrograms(Array.isArray(data) ? data : []);
       })
       .catch(() => {
-        // keep fallback
+        if (mounted) setPrograms([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
       });
 
     return () => {
@@ -47,11 +48,17 @@ export const Programs: React.FC = () => {
           className="mb-12"
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {programs.map((prog, idx) => (
-            <ProgramCard key={prog.id} program={prog} index={idx} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-12 text-slate-500 text-sm">Loading programs...</div>
+        ) : programs.length === 0 ? (
+          <div className="text-center py-12 text-slate-500 text-sm">No programs available.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {programs.map((prog, idx) => (
+              <ProgramCard key={prog.id} program={prog} index={idx} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
