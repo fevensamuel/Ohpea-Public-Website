@@ -6,7 +6,6 @@ import { AnnouncementCard } from '../components/AnnouncementCard.js';
 import { NewsCard } from '../components/NewsCard.js';
 import { EventCard } from '../components/EventCard.js';
 import { api, Announcement, ApiMeta } from '../lib/ohpea-api-client.js';
-import { fallbackAnnouncements } from '../data/fallbackContent.js';
 
 export const Updates: React.FC = () => {
   const { t, language, isRtl } = useTranslation();
@@ -19,8 +18,8 @@ export const Updates: React.FC = () => {
   const [meta, setMeta] = useState<ApiMeta>({
     page: 1,
     pageSize: 10,
-    total: fallbackAnnouncements.length,
-    totalPages: Math.max(1, Math.ceil(fallbackAnnouncements.length / 10)),
+    total: 0,
+    totalPages: 1,
   });
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +32,6 @@ export const Updates: React.FC = () => {
     { id: 'call_for_research', labelKey: 'nav.callsResearch' },
   ] as const;
 
-  // Reset page when tab changes
   const handleTabChange = (tabId: typeof activeTab) => {
     setActiveTab(tabId);
     setPage(1);
@@ -53,11 +51,7 @@ export const Updates: React.FC = () => {
         : (activeTab as Announcement['type']);
 
     api
-      .getAnnouncements({
-        type: queryType,
-        limit: 10,
-        page,
-      })
+      .getAnnouncements({ type: queryType, limit: 10, page })
       .then((res) => {
         if (mounted && res && Array.isArray(res.data)) {
           setAnnouncements(res.data);
@@ -66,17 +60,8 @@ export const Updates: React.FC = () => {
       })
       .catch(() => {
         if (mounted) {
-          // Graceful fallback to local seed data
-          const filtered = fallbackAnnouncements.filter((item) => {
-            if (activeTab === 'all') return true;
-            return item.type === activeTab;
-          });
-          const pageSize = 10;
-          const total = filtered.length;
-          const totalPages = Math.max(1, Math.ceil(total / pageSize));
-          const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
-          setAnnouncements(paged as unknown as Announcement[]);
-          setMeta({ page, pageSize, total, totalPages });
+          setAnnouncements([]);
+          setMeta({ page: 1, pageSize: 10, total: 0, totalPages: 1 });
         }
       })
       .finally(() => {
@@ -118,9 +103,7 @@ export const Updates: React.FC = () => {
       />
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Controls: Search and Tabs */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8">
-          {/* Tabs */}
           <div className="flex flex-wrap gap-1 bg-stone-100 dark:bg-stone-800 p-1.5 rounded-2xl">
             {tabs.map((tab) => (
               <button
@@ -137,7 +120,6 @@ export const Updates: React.FC = () => {
             ))}
           </div>
 
-          {/* Search Bar */}
           <div className="relative w-full md:w-72">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
             <input
@@ -150,19 +132,17 @@ export const Updates: React.FC = () => {
           </div>
         </div>
 
-        {/* Loading Spinner */}
         {loading && (
           <div className="flex items-center justify-center py-12 text-stone-400 gap-2">
             <Loader2 className="w-5 h-5 animate-spin text-emerald-700" />
-            <span className="text-xs font-medium">Loading updates...</span>
+            <span className="text-xs font-medium">{t('common.loading', 'Loading…')}</span>
           </div>
         )}
 
-        {/* Results Grid */}
         {!loading && displayedItems.length === 0 ? (
           <div className="text-center py-16 bg-stone-50 dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800">
             <p className="text-sm text-stone-500">
-              {t('updates.noResults')}
+              {t('updates.noResults', 'No updates found')}
             </p>
           </div>
         ) : (
@@ -179,11 +159,10 @@ export const Updates: React.FC = () => {
           </div>
         )}
 
-        {/* Pagination Controls */}
         {meta.totalPages > 1 && (
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-stone-200 dark:border-stone-800">
             <p className="text-xs text-stone-500">
-              Showing <span className="font-semibold text-stone-900 dark:text-stone-100">{(meta.page - 1) * meta.pageSize + 1}</span> - <span className="font-semibold text-stone-900 dark:text-stone-100">{Math.min(meta.page * meta.pageSize, meta.total)}</span> of <span className="font-semibold text-stone-900 dark:text-stone-100">{meta.total}</span> announcements
+              Showing <span className="font-semibold text-stone-900 dark:text-stone-100">{(meta.page - 1) * meta.pageSize + 1}</span> - <span className="font-semibold text-stone-900 dark:text-stone-100">{Math.min(meta.page * meta.pageSize, meta.total)}</span> of <span className="font-semibold text-stone-900 dark:text-stone-100">{meta.total}</span>
             </p>
 
             <div className="flex items-center gap-2">

@@ -11,18 +11,103 @@ export class ApiError extends Error {
 
 export interface Paginated<T> { data: T[]; meta: ApiMeta }
 
-export interface SiteSettings { name?: string; tagline?: string; email?: string; phone?: string; address?: string; coordinates?: { lat: number; lng: number }; social?: Record<string, string>; hotlines?: string[]; [k: string]: unknown }
-export interface PublicStats { totalMembers: number; accreditedHotels: number; certifiedGuides: number; trainingGraduates: number; [k: string]: unknown }
-export interface Program { id: string; slug: string; title: string; summary?: string; body?: string; [k: string]: unknown }
-export interface Announcement { id: string; slug: string; type: 'news' | 'event' | 'vacancy' | 'proposal' | 'research'; title: string; summary?: string; body?: string; coverImage?: string; eventStartAt?: string; deadline?: string; publishedAt?: string; [k: string]: unknown }
-export interface Partner { id: string; name: string; website?: string; logoUrl?: string; [k: string]: unknown }
-export interface Activity { id: string; title: string; summary?: string; date?: string; photos?: string[]; [k: string]: unknown }
-export interface Region { id: string; name: string; woredas?: { id: string; name: string }[] }
+export type LocalizedText = string | { en?: string; om?: string; am?: string; [k: string]: unknown };
+
+export interface SiteSettings {
+  name?: LocalizedText;
+  tagline?: LocalizedText;
+  email?: string;
+  phone?: string;
+  address?: LocalizedText;
+  coordinates?: { lat: number; lng: number };
+  social?: Record<string, string>;
+  hotlines?: string[];
+  [k: string]: unknown;
+}
+
+export interface PublicStats {
+  totalMembers: number;
+  accreditedHotels: number;
+  certifiedGuides: number;
+  trainingGraduates: number;
+  [k: string]: unknown;
+}
+
+export interface Program {
+  id: string;
+  slug: string;
+  title: LocalizedText;
+  summary?: LocalizedText;
+  body?: LocalizedText;
+  iconUrl?: string;
+  orderIndex?: number;
+  [k: string]: unknown;
+}
+
+export interface Announcement {
+  id: string;
+  slug: string;
+  type: 'news' | 'event' | 'vacancy' | 'proposal' | 'research';
+  title: LocalizedText;
+  summary?: LocalizedText;
+  body?: LocalizedText;
+  coverImageUrl?: string;
+  eventStartAt?: string;
+  deadline?: string;
+  publishedAt?: string;
+  [k: string]: unknown;
+}
+
+export interface Partner {
+  id: string;
+  name: LocalizedText;
+  website?: string;
+  logoUrl?: string;
+  [k: string]: unknown;
+}
+
+export interface Activity {
+  id: string;
+  title: LocalizedText;
+  summary?: LocalizedText;
+  date?: string;
+  photos?: string[];
+  [k: string]: unknown;
+}
+
+export interface Region {
+  id: string;
+  name: LocalizedText;
+  woredas?: { id: string; name: LocalizedText }[];
+}
+
+export interface Objective {
+  id: string;
+  kind: 'general' | 'official' | 'main' | 'specific';
+  title: LocalizedText;
+  description?: LocalizedText;
+  [k: string]: unknown;
+}
+
+export interface LookupItem {
+  id?: string;
+  code?: string;
+  label?: LocalizedText;
+  localizedLabel?: string;
+  name?: LocalizedText;
+  [k: string]: unknown;
+}
 
 export interface RegistrationForm {
-  fullName: string; email: string; phone: string;
-  qualification?: string; fieldOfStudy?: string; organization?: string; zone?: string;
-  idType: 'fayda' | 'passport' | 'kebele' | 'driver'; idNumber: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  qualification?: string;
+  fieldOfStudy?: string;
+  organization?: string;
+  zone?: string;
+  idType: 'fayda' | 'passport' | 'kebele' | 'driver';
+  idNumber: string;
   idDocument: File;
   credentialDocs?: File[];
 }
@@ -42,7 +127,6 @@ export class OhpeaPublicClient {
     return u.toString();
   }
 
-  // Never sends auth header; never sends cookies.
   private async call<T>(method: 'GET' | 'POST', path: string, opts: { query?: Query; json?: unknown; form?: FormData } = {}): Promise<T> {
     const headers: Record<string, string> = { Accept: 'application/json' };
     let body: BodyInit | undefined;
@@ -67,17 +151,19 @@ export class OhpeaPublicClient {
   }
 
   // ── READ ─────────────────────────────────────────────
-  getSiteSettings  = () => this.call<SiteSettings>('GET', '/public/site-settings');
-  getStats         = () => this.call<PublicStats>('GET', '/public/stats');
-  getPrograms      = () => this.call<Program[]>('GET', '/public/programs');
-  getProgram       = (slug: string) => this.call<Program>('GET', `/public/programs/${encodeURIComponent(slug)}`);
-  getAnnouncements = (q: { type?: Announcement['type']; limit?: number; page?: number } = {}) => this.callPaginated<Announcement>('/public/announcements', q);
-  getAnnouncement  = (slug: string) => this.call<Announcement>('GET', `/public/announcements/${encodeURIComponent(slug)}`);
-  getPartners      = () => this.call<Partner[]>('GET', '/public/partners');
-  getActivities    = () => this.call<Activity[]>('GET', '/public/activities');
-  getRegions       = () => this.call<Region[]>('GET', '/public/lookups/regions');
-  getGraduationLevels = () => this.call<unknown[]>('GET', '/public/lookups/graduation-levels');
-  getFieldsOfStudy = () => this.call<unknown[]>('GET', '/public/lookups/fields');
+  getSiteSettings     = () => this.call<SiteSettings>('GET', '/public/site-settings');
+  getStats            = () => this.call<PublicStats>('GET', '/public/stats');
+  getPrograms         = () => this.call<Program[]>('GET', '/public/programs');
+  getProgram          = (slug: string) => this.call<Program>('GET', `/public/programs/${encodeURIComponent(slug)}`);
+  getAnnouncements    = (q: { type?: Announcement['type']; limit?: number; page?: number } = {}) => this.callPaginated<Announcement>('/public/announcements', q);
+  getAnnouncement     = (slug: string) => this.call<Announcement>('GET', `/public/announcements/${encodeURIComponent(slug)}`);
+  getPartners         = () => this.call<Partner[]>('GET', '/public/partners');
+  getActivities       = () => this.call<Activity[]>('GET', '/public/activities');
+  getRegions          = () => this.call<Region[]>('GET', '/public/lookups/regions');
+  getGraduationLevels = () => this.call<LookupItem[]>('GET', '/public/lookups/graduation-levels');
+  getFieldsOfStudy    = () => this.call<LookupItem[]>('GET', '/public/lookups/fields');
+  getSectors          = () => this.call<LookupItem[]>('GET', '/public/lookups/sectors');
+  getObjectives       = () => this.call<Objective[]>('GET', '/public/objectives');
 
   // ── WRITE ────────────────────────────────────────────
   submitRegistration(form: RegistrationForm | FormData) {
