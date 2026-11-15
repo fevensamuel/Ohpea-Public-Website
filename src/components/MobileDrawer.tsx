@@ -111,7 +111,7 @@ export function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: ()
                 <Link to="/programs/advocacy" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
                   {t('programs.p2Title')}
                 </Link>
-                <Link to="/programs/training-awareness" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
+                <Link to="/programs/training-and-awareness" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
                   {t('programs.p3Title')}
                 </Link>
                 <Link to="/programs/b2b-bridge" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
@@ -120,7 +120,7 @@ export function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: ()
                 <Link to="/programs/investment-bridge" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
                   {t('programs.p5Title')}
                 </Link>
-                <Link to="/programs/networking-jobs" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
+                <Link to="/programs/member-networking-jobs" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
                   {t('programs.p6Title')}
                 </Link>
                 <Link to="/programs/international-relations" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">

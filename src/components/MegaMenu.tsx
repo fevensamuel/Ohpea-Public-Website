@@ -25,10 +25,10 @@ export function MegaMenu({ onClose }: { onClose: () => void }) {
   const programsList = [
     { slug: 'research-and-study', titleKey: 'programs.p1Title', descKey: 'programs.p1Summary' },
     { slug: 'advocacy', titleKey: 'programs.p2Title', descKey: 'programs.p2Summary' },
-    { slug: 'training-awareness', titleKey: 'programs.p3Title', descKey: 'programs.p3Summary' },
+    { slug: 'training-and-awareness', titleKey: 'programs.p3Title', descKey: 'programs.p3Summary' },
     { slug: 'b2b-bridge', titleKey: 'programs.p4Title', descKey: 'programs.p4Summary', comingSoon: true },
     { slug: 'investment-bridge', titleKey: 'programs.p5Title', descKey: 'programs.p5Summary', comingSoon: true },
-    { slug: 'networking-jobs', titleKey: 'programs.p6Title', descKey: 'programs.p6Summary' },
+    { slug: 'member-networking-jobs', titleKey: 'programs.p6Title', descKey: 'programs.p6Summary' },
     { slug: 'international-relations', titleKey: 'programs.p7Title', descKey: 'programs.p7Summary' },
   ];
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
 import { PageBanner } from '../components/PageBanner.js';
@@ -9,9 +10,23 @@ import { api, Announcement, ApiMeta } from '../lib/ohpea-api-client.js';
 
 export const Updates: React.FC = () => {
   const { t, language, isRtl } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const validTabs = [
+    'all',
+    'news',
+    'event',
+    'vacancy',
+    'call_for_proposal',
+    'call_for_research',
+  ] as const;
+  type Tab = (typeof validTabs)[number];
+  const getTabFromSearchParams = (): Tab => {
+    const type = searchParams.get('type');
+    return validTabs.find((tab) => tab === type) || 'all';
+  };
   const [activeTab, setActiveTab] = useState<
-    'all' | 'news' | 'event' | 'vacancy' | 'call_for_proposal' | 'call_for_research'
-  >('all');
+    Tab
+  >(getTabFromSearchParams);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -36,6 +51,11 @@ export const Updates: React.FC = () => {
     setActiveTab(tabId);
     setPage(1);
   };
+
+  useEffect(() => {
+    setActiveTab(getTabFromSearchParams());
+    setPage(1);
+  }, [searchParams]);
 
   useEffect(() => {
     let mounted = true;

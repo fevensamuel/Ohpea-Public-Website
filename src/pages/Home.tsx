@@ -28,7 +28,6 @@ import { PartnerGrid } from '../components/PartnerGrid.js';
 import { CountdownTimer } from '../components/CountdownTimer.js';
 import { NewsletterForm } from '../components/NewsletterForm.js';
 import {
-  fallbackPrograms,
   fallbackAnnouncements,
   fallbackPartners,
   fallbackActivities,
@@ -44,9 +43,17 @@ export const Home: React.FC = () => {
   const [announcements, setAnnouncements] = useState<any[]>(fallbackAnnouncements);
   const [partners, setPartners] = useState<any[]>(fallbackPartners);
   const [activities, setActivities] = useState<any[]>(fallbackActivities);
+  const [programs, setPrograms] = useState<any[]>([]);
 
   useEffect(() => {
     let mounted = true;
+    api
+      .getPrograms()
+      .then((data) => {
+        if (mounted && Array.isArray(data)) setPrograms(data);
+      })
+      .catch(() => {});
+
     api
       .getAnnouncements({ limit: 12 })
       .then((res) => {
@@ -327,7 +334,7 @@ export const Home: React.FC = () => {
             className="mb-12"
           />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {fallbackPrograms.map((prog, idx) => (
+            {programs.map((prog, idx) => (
               <ProgramCard key={prog.id} program={prog} index={idx} />
             ))}
           </div>

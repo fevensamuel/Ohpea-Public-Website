@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Compass,
   Target,
@@ -22,12 +22,20 @@ function localized(v: LocalizedText | undefined, lang: string): string {
 
 export const About: React.FC = () => {
   const { t, language, isRtl } = useTranslation();
+  const location = useLocation();
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!location.hash) return;
+
+    const id = location.hash.replace('#', '');
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  }, [location]);
 
   useEffect(() => {
     let mounted = true;
@@ -68,7 +76,7 @@ export const About: React.FC = () => {
       />
 
       {/* Who We Are */}
-      <section id="who-we-are" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="who-we-are" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6 text-start">
             <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
@@ -95,7 +103,7 @@ export const About: React.FC = () => {
           </div>
 
           {/* Mission & Vision */}
-          <div id="mission-vision" className="space-y-6">
+          <section id="mission-vision" className="space-y-6 scroll-mt-24">
             <div className="bg-emerald-900 text-white rounded-2xl p-8 border border-emerald-800 shadow-md">
               <div className="w-12 h-12 rounded-xl bg-amber-400 text-stone-950 flex items-center justify-center font-bold mb-4">
                 <Target className="w-6 h-6" />
@@ -115,10 +123,11 @@ export const About: React.FC = () => {
                 {t('hero.subtitle')}
               </p>
             </div>
-          </div>
+          </section>
         </div>
       </section>
 
+      <section id="objectives" className="space-y-16 scroll-mt-24">
       {/* General Objective Highlight */}
       {generalObjective && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -135,7 +144,7 @@ export const About: React.FC = () => {
 
       {/* 8 Official Objectives */}
       {officialObjectives.length > 0 && (
-        <section id="objectives" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeading
             title={t('about.officialObjectives')}
             subtitle={t('about.officialObjectivesSubtitle')}
@@ -205,14 +214,17 @@ export const About: React.FC = () => {
           })}
         </div>
       </section>
+      </section>
 
       {/* Institutional Partners */}
-      {partners.length > 0 && (
-        <section id="partners" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeading title={t('home.partnersTitle')} className="mb-8" />
+      <section id="partners" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+        <SectionHeading title={t('home.partnersTitle')} className="mb-8" />
+        {partners.length > 0 ? (
           <PartnerGrid partners={partners as any} />
-        </section>
-      )}
+        ) : !loading ? (
+          <p className="text-center py-8 text-stone-500 text-sm">No partners available.</p>
+        ) : null}
+      </section>
 
       {loading && (
         <div className="text-center py-8 text-stone-400 text-sm">Loading…</div>

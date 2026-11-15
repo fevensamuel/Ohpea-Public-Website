@@ -44,7 +44,7 @@ export function Header() {
   // Close dropdown on route change
   useEffect(() => {
     setActiveDropdown(null);
-  }, [location.pathname]);
+  }, [location]);
 
   // Click outside listener for dropdowns
   useEffect(() => {

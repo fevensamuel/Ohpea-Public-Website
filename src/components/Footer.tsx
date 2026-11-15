@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
     { id: 'training-and-awareness', nameKey: 'programs.p3Title' },
     { id: 'b2b-bridge', nameKey: 'programs.p4Title' },
     { id: 'investment-bridge', nameKey: 'programs.p5Title' },
-    { id: 'member-networking-and-jobs', nameKey: 'programs.p6Title' },
+    { id: 'member-networking-jobs', nameKey: 'programs.p6Title' },
     { id: 'international-relations', nameKey: 'programs.p7Title' },
   ];
 
@@ -142,9 +142,6 @@ export const Footer: React.FC = () => {
             <Link to="/terms" className="hover:text-amber-300 transition-colors">
               {t('footer.terms')}
             </Link>
-            <span className="text-emerald-400/80">
-              {t('common.websiteBy')}
-            </span>
           </div>
         </div>
       </div>
