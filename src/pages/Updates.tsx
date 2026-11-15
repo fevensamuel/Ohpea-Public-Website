@@ -6,7 +6,7 @@ import { PageBanner } from '../components/PageBanner.js';
 import { AnnouncementCard } from '../components/AnnouncementCard.js';
 import { NewsCard } from '../components/NewsCard.js';
 import { EventCard } from '../components/EventCard.js';
-import { api, Announcement, ApiMeta } from '../lib/ohpea-api-client.js';
+import { api, Announcement, ApiMeta } from '../lib/ophea-api-client.js';
 
 export const Updates: React.FC = () => {
   const { t, language, isRtl } = useTranslation();

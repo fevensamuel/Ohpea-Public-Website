@@ -16,10 +16,9 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
 import { PageBanner } from '../components/PageBanner.js';
-import { LockedBadge } from '../components/LockedBadge.js';
-import { fallbackPrograms } from '../data/fallbackContent.js';
+import { localize } from '../utils/localize.js';
 
-import { api } from '../lib/ohpea-api-client.js';
+import { api } from '../lib/ophea-api-client.js';
 
 const iconMap: Record<string, React.ElementType> = {
   BookOpen,
@@ -36,9 +35,8 @@ export const ProgramDetail: React.FC = () => {
   const { t, language, isRtl } = useTranslation();
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
-  const [program, setProgram] = React.useState<any>(() =>
-    fallbackPrograms.find((p) => p.slug === slug || p.id === slug) || null
-  );
+  const [program, setProgram] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (!slug) return;
@@ -50,16 +48,15 @@ export const ProgramDetail: React.FC = () => {
           setProgram((prev: any) => ({ ...prev, ...data }));
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (mounted) setLoading(false); });
 
     return () => {
       mounted = false;
     };
   }, [slug]);
 
-  const programIndex = fallbackPrograms.findIndex(
-    (p) => p.slug === slug || p.id === slug
-  );
+  if (loading && !program) return <div className="py-24 text-center text-xs text-stone-500">…</div>;
 
   if (!program) {
     return (
@@ -79,15 +76,11 @@ export const ProgramDetail: React.FC = () => {
   }
 
   const Icon = iconMap[program.icon] || Award;
-  const title = program.title[language] || program.title.en;
-  const summary = program.summary[language] || program.summary.en;
-  const body = program.body[language] || program.body.en;
+  const title = localize(program.title, language);
+  const summary = localize(program.summary, language);
+  const body = localize(program.body, language);
 
-  const bulletKeys = [
-    `programs.p${programIndex + 1}Bullet1`,
-    `programs.p${programIndex + 1}Bullet2`,
-    `programs.p${programIndex + 1}Bullet3`,
-  ];
+  const bullets = (program.bullets || []).map((b: any) => localize(b, language)).filter(Boolean);
 
   return (
     <div className="space-y-16 pb-16">
@@ -109,15 +102,11 @@ export const ProgramDetail: React.FC = () => {
                 <Icon className="w-8 h-8" />
               </div>
               <div>
-                <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
-                  {t('program.pillar')} 0{programIndex + 1}
-                </span>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-white">
                   {title}
                 </h1>
               </div>
             </div>
-            {program.comingSoon && <LockedBadge />}
           </div>
 
           <div className="space-y-4">
@@ -130,24 +119,24 @@ export const ProgramDetail: React.FC = () => {
           </div>
 
           {/* Key Deliverables */}
-          <div className="space-y-4 pt-4 border-t border-stone-100 dark:border-stone-800">
+          {bullets.length > 0 && <div className="space-y-4 pt-4 border-t border-stone-100 dark:border-stone-800">
             <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
               {t('program.keyDeliverables')}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {bulletKeys.map((bk, i) => (
+              {bullets.map((b: string, i: number) => (
                 <div
                   key={i}
                   className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/60 flex items-start gap-3"
                 >
                   <CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                   <span className="text-xs sm:text-sm font-medium text-stone-800 dark:text-stone-200">
-                    {t(bk as any)}
+                    {b}
                   </span>
                 </div>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* Action Call */}
           <div className="pt-8 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4">

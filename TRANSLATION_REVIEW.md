@@ -1,6 +1,6 @@
-# OHPEA Public Website — Translation & Review Documentation
+# OPHEA Public Website — Translation & Review Documentation
 
-This document summarizes the translation system and linguistic parity established for the Oromia Tourism & Hospitality Professionals Association (OHPEA) web portal.
+This document summarizes the translation system and linguistic parity established for the Oromia Tourism & Hospitality Professionals Association (OPHEA) web portal.
 
 ---
 

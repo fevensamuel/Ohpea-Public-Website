@@ -5,7 +5,7 @@ import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
 import { useLookups } from '../hooks/useLookups.js';
 import { PageBanner } from '../components/PageBanner.js';
-import { api, ApiError } from '../lib/ohpea-api-client.js';
+import { api, ApiError } from '../lib/ophea-api-client.js';
 
 const isFile = (value: unknown): value is File =>
   typeof File !== 'undefined' && value instanceof File;
@@ -17,7 +17,7 @@ const registrationSchema = z.object({
   gender: z.string().refine((value): boolean => value === 'Male' || value === 'Female', 'Please select a gender.'),
   dateOfBirth: z.string(),
   nationality: z.string().trim().min(1, 'Nationality is required.'),
-  nationalId: z.string(),
+  nationalId: z.string().trim().min(5, 'Enter your National ID / Fayda number.'),
   phone: z.string().trim().min(1, 'Phone number is required.')
     .regex(/^\+251[\s-]?[97](?:[\s-]?\d){8}$/, 'Enter a phone number in +251 format.'),
   email: z.string().trim().min(1, 'Email is required.').email('Enter a valid email address.'),
@@ -159,11 +159,10 @@ export const Register: React.FC = () => {
       gender: validated.data.gender.toLowerCase(), // Backend expects lowercase
       graduationLevelId: validated.data.highestQualification, // Backend expects this name
       fieldOfStudyId: validated.data.fieldOfStudy, // Backend expects this name
-      occupationType: validated.data.employmentStatus, // Backend expects this name
       idType: 'fayda', // Default to fayda since the form doesn't ask
-      idNumber: validated.data.nationalId || '0000',
+      idNumber: validated.data.nationalId,
       town: validated.data.cityTown,
-      employer: validated.data.organization,
+      organizationName: validated.data.organization,
     };
 
     for (const [key, value] of Object.entries(transformed)) {
@@ -298,7 +297,7 @@ export const Register: React.FC = () => {
                     </div>
                     <div>
                       <label className={labelClassName}>{t('register.phone', 'Phone')} <span className="text-red-600">*</span></label>
-                      <input {...register('phone')} type="tel" placeholder="+251 91 123 4567" className={fieldClassName} />
+                      <input {...register('phone')} type="tel" placeholder="+2519XXXXXXXX" className={fieldClassName} />
                       {fieldError('phone') && <p className="mt-1 text-xs text-red-600">{fieldError('phone')}</p>}
                     </div>
                     <div>
@@ -418,7 +417,7 @@ export const Register: React.FC = () => {
                     {renderCheckboxes('areasOfExpertise', expertiseAreas)}
                   </div>
                   <div>
-                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">{t('register.interests', 'Areas of Interest in OHPEA')}</h3>
+                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">{t('register.interests', 'Areas of Interest in OPHEA')}</h3>
                     {renderCheckboxes('areasOfInterest', interestAreas)}
                   </div>
                 </section>

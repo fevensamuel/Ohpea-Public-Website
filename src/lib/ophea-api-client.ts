@@ -1,4 +1,4 @@
-// src/lib/ohpea-api-client.ts
+// src/lib/ophea-api-client.ts
 export interface ApiMeta { page: number; pageSize: number; total: number; totalPages: number }
 export interface ApiEnvelope<T> { success: boolean; data: T; meta?: ApiMeta; error?: string; fields?: Record<string, string> }
 
@@ -114,7 +114,7 @@ export interface RegistrationForm {
 
 type Query = Record<string, string | number | boolean | undefined | null>;
 
-export class OhpeaPublicClient {
+export class OpheaPublicClient {
   private baseUrl: string;
   constructor(rawBase: string) {
     this.baseUrl = rawBase.replace(/\/+$/, '');
@@ -199,9 +199,9 @@ const isProd: boolean = Boolean((import.meta as any).env?.PROD);
 if (!envUrl && isProd) {
   // eslint-disable-next-line no-console
   console.error(
-    '[ohpea-api] VITE_API_URL is NOT set in this production build. ' +
+    '[ophea-api] VITE_API_URL is NOT set in this production build. ' +
     'Every API call will fail. Set VITE_API_URL in your CI/CD environment and rebuild.'
   );
 }
 
-export const api = new OhpeaPublicClient(envUrl || 'http://localhost:3000/api');
+export const api = new OpheaPublicClient(envUrl || 'http://localhost:3000/api');

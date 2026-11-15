@@ -11,7 +11,6 @@ import {
   Menu,
   ChevronDown,
   UserCheck,
-  Lock,
 } from 'lucide-react';
 import { Logo } from './Logo.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
@@ -60,8 +59,8 @@ export function Header() {
   // Safe accessors — settings may be {} on first paint while the API resolves,
   // so contactPhones / contactEmails can be undefined. Optional chaining + ??
   // prevents "Cannot read properties of undefined (reading '0')" at render time.
-  const primaryPhone: string = settings.contactPhones?.[0] ?? '+251 11 550 4422';
-  const primaryEmail: string = settings.contactEmails?.[0] ?? 'info@ohpea.org';
+  const primaryPhone: string = settings.contactPhones?.[0] ?? '';
+  const primaryEmail: string = settings.contactEmails?.[0] ?? '';
 
   return (
     <>
@@ -71,21 +70,21 @@ export function Header() {
           <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
             {/* Contact info on start */}
             <div className="flex items-center gap-4 text-[11px] text-slate-300">
-              <a
+              {primaryPhone && <a
                 href={`tel:${primaryPhone.replace(/\s+/g, '')}`}
                 className="inline-flex items-center gap-1.5 hover:text-white transition"
               >
                 <Phone className="w-3 h-3 text-[#C9A24A]" />
                 <span dir="ltr">{primaryPhone}</span>
-              </a>
-              <span className="text-white/20 hidden sm:inline">|</span>
-              <a
+              </a>}
+              {primaryPhone && primaryEmail && <span className="text-white/20 hidden sm:inline">|</span>}
+              {primaryEmail && <a
                 href={`mailto:${primaryEmail}`}
                 className="hidden sm:inline-flex items-center gap-1.5 hover:text-white transition"
               >
                 <Mail className="w-3 h-3 text-[#C9A24A]" />
                 <span>{primaryEmail}</span>
-              </a>
+              </a>}
             </div>
 
             {/* Utility right tools */}
@@ -93,15 +92,6 @@ export function Header() {
               <LanguageSwitcher variant="dropdown" />
               <span className="text-white/20">|</span>
               <ThemeToggle />
-              <span className="text-white/20">|</span>
-              {/* Member area lock (Phase 4 placeholder, no login) */}
-              <Link
-                to="/member-area"
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-300 hover:text-white transition bg-white/10 px-2 py-0.5 rounded"
-              >
-                <Lock className="w-2.5 h-2.5 text-[#C9A24A]" />
-                <span>{t('nav.memberArea')}</span>
-              </Link>
             </div>
           </div>
         </div>
@@ -240,17 +230,6 @@ export function Header() {
                 }`}
               >
                 {t('nav.membership')}
-              </Link>
-
-              {/* Resources (Locked) */}
-              <Link
-                to="/resources"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:text-[#0B3D2E]"
-              >
-                <span>{t('nav.resources')}</span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
-                  {t('common.comingSoon')}
-                </span>
               </Link>
 
               {/* Contact */}

@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Send, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
-import { api } from '../lib/ohpea-api-client.js';
+import { api } from '../lib/ophea-api-client.js';
 
 export function NewsletterForm({ variant = 'banner' }: { variant?: 'banner' | 'footer' | 'compact' }) {
   const { t, language } = useTranslation();

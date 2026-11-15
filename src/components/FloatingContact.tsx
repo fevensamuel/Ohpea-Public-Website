@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { MessageSquare, Phone, Mail, X, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../i18n/LanguageContext';
+import { useSiteSettings } from '../hooks/useSiteSettings';
 
 export const FloatingContact: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { t, language } = useTranslation();
   const isRtl = language === 'ar';
+  const { settings } = useSiteSettings();
+  const phone: string = settings.contactPhones?.[0] ?? '';
+  const email: string = settings.contactEmails?.[0] ?? '';
 
   return (
     <div
@@ -29,8 +33,9 @@ export const FloatingContact: React.FC = () => {
             </button>
           </div>
           <div className="py-2 space-y-2 text-xs">
+            {phone && (
             <a
-              href="tel:+251911000000"
+              href={`tel:${phone.replace(/\s+/g, '')}`}
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-stone-700 dark:text-stone-300 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors"
             >
               <div className="p-2 bg-emerald-100 dark:bg-emerald-900/60 rounded-md text-emerald-800 dark:text-emerald-300">
@@ -38,11 +43,13 @@ export const FloatingContact: React.FC = () => {
               </div>
               <div>
                 <p className="font-medium text-stone-900 dark:text-stone-100">{t('floating.hotline')}</p>
-                <p className="text-stone-500 text-[11px]">+251 91 100 0000</p>
+                <p className="text-stone-500 text-[11px]">{phone}</p>
               </div>
             </a>
+            )}
+            {email && (
             <a
-              href="mailto:info@ohpea.org"
+              href={`mailto:${email}`}
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-stone-700 dark:text-stone-300 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors"
             >
               <div className="p-2 bg-emerald-100 dark:bg-emerald-900/60 rounded-md text-emerald-800 dark:text-emerald-300">
@@ -50,9 +57,10 @@ export const FloatingContact: React.FC = () => {
               </div>
               <div>
                 <p className="font-medium text-stone-900 dark:text-stone-100">{t('floating.inquiries')}</p>
-                <p className="text-stone-500 text-[11px]">info@ohpea.org</p>
+                <p className="text-stone-500 text-[11px]">{email}</p>
               </div>
             </a>
+            )}
             <Link
               to="/register"
               onClick={() => setIsOpen(false)}

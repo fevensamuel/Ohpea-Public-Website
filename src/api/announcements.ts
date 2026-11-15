@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { api, Announcement } from '../lib/ohpea-api-client.js';
+import { api, Announcement } from '../lib/ophea-api-client.js';
 import { fallbackAnnouncements } from '../data/fallbackContent.js';
 
 export async function getAnnouncements(

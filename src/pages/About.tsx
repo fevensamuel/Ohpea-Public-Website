@@ -12,7 +12,7 @@ import { useTranslation } from '../i18n/LanguageContext.js';
 import { PageBanner } from '../components/PageBanner.js';
 import { SectionHeading } from '../components/SectionHeading.js';
 import { PartnerGrid } from '../components/PartnerGrid.js';
-import { api, Objective, Partner, LocalizedText } from '../lib/ohpea-api-client.js';
+import { api, Objective, Partner, LocalizedText } from '../lib/ophea-api-client.js';
 
 function localized(v: LocalizedText | undefined, lang: string): string {
   if (v == null) return '';

@@ -5,14 +5,17 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X, ChevronDown, UserCheck, Phone, Mail, Award, BookOpen, Lock } from 'lucide-react';
+import { X, ChevronDown, UserCheck, Phone, Mail, Award, BookOpen } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
 import { LanguageSwitcher } from './LanguageSwitcher.js';
 import { ThemeToggle } from './ThemeToggle.js';
 import { Logo } from './Logo.js';
+import { usePrograms } from '../hooks/usePrograms.js';
+import { localize } from '../utils/localize.js';
 
 export function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { t, isRtl } = useTranslation();
+  const { t, isRtl, language } = useTranslation();
+  const programs = usePrograms();
   const [openSection, setOpenSection] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -105,27 +108,11 @@ export function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: ()
                 <Link to="/programs" onClick={onClose} className="block py-1.5 text-xs font-bold text-[#E8772E]">
                   {t('common.viewAll')}
                 </Link>
-                <Link to="/programs/research-and-study" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
-                  {t('programs.p1Title')}
-                </Link>
-                <Link to="/programs/advocacy" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
-                  {t('programs.p2Title')}
-                </Link>
-                <Link to="/programs/training-and-awareness" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
-                  {t('programs.p3Title')}
-                </Link>
-                <Link to="/programs/b2b-bridge" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
-                  {t('programs.p4Title')}
-                </Link>
-                <Link to="/programs/investment-bridge" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
-                  {t('programs.p5Title')}
-                </Link>
-                <Link to="/programs/member-networking-jobs" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
-                  {t('programs.p6Title')}
-                </Link>
-                <Link to="/programs/international-relations" onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
-                  {t('programs.p7Title')}
-                </Link>
+                {programs.map((p) => (
+                  <Link key={p.id} to={`/programs/${p.slug}`} onClick={onClose} className="block py-1 text-xs text-slate-600 dark:text-slate-400">
+                    {localize(p.title, language)}
+                  </Link>
+                ))}
               </div>
             )}
           </div>
@@ -166,31 +153,6 @@ export function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: ()
             className="block py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
           >
             {t('nav.membership')}
-          </Link>
-
-          <Link
-            to="/resources"
-            onClick={onClose}
-            className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
-          >
-            <span>{t('nav.resources')}</span>
-            <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
-              {t('common.comingSoon')}
-            </span>
-          </Link>
-
-          <Link
-            to="/member-area"
-            onClick={onClose}
-            className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
-          >
-            <span className="flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-amber-500" />
-              <span>{t('nav.memberArea')}</span>
-            </span>
-            <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
-              {t('common.comingSoon')}
-            </span>
           </Link>
 
           <Link

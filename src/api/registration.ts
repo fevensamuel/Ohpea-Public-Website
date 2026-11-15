@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { api, RegistrationForm } from '../lib/ohpea-api-client.js';
+import { api, RegistrationForm } from '../lib/ophea-api-client.js';
 
 export async function submitRegistration(
   form: RegistrationForm | FormData
@@ -11,7 +11,7 @@ export async function submitRegistration(
   if (!(form instanceof FormData)) {
     const res = await api.submitRegistration(form);
     return {
-      memberNo: res.registrationId || `OHPEA-${Date.now().toString().slice(-6)}`,
+      memberNo: res.registrationId || `OPHEA-${Date.now().toString().slice(-6)}`,
       message: 'Registration submitted successfully.',
       registrationId: res.registrationId,
     };
@@ -46,7 +46,7 @@ export async function submitRegistration(
   });
 
   return {
-    memberNo: res.registrationId || `OHPEA-${Date.now().toString().slice(-6)}`,
+    memberNo: res.registrationId || `OPHEA-${Date.now().toString().slice(-6)}`,
     message: 'Registration submitted successfully.',
     registrationId: res.registrationId,
   };

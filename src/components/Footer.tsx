@@ -4,20 +4,18 @@ import { Mail, Phone, MapPin, ExternalLink, Globe } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext';
 import { Logo } from './Logo';
 import { NewsletterForm } from './NewsletterForm';
+import { useSiteSettings } from '../hooks/useSiteSettings';
+import { usePrograms } from '../hooks/usePrograms';
+import { localize } from '../utils/localize';
 
 export const Footer: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const { settings } = useSiteSettings();
+  const programs = usePrograms();
+  const phones: string[] = settings.contactPhones ?? [];
+  const emails: string[] = settings.contactEmails ?? [];
+  const address = localize(settings.address, language);
   const currentYear = new Date().getFullYear();
-
-  const programs = [
-    { id: 'research-and-study', nameKey: 'programs.p1Title' },
-    { id: 'advocacy', nameKey: 'programs.p2Title' },
-    { id: 'training-and-awareness', nameKey: 'programs.p3Title' },
-    { id: 'b2b-bridge', nameKey: 'programs.p4Title' },
-    { id: 'investment-bridge', nameKey: 'programs.p5Title' },
-    { id: 'member-networking-jobs', nameKey: 'programs.p6Title' },
-    { id: 'international-relations', nameKey: 'programs.p7Title' },
-  ];
 
   return (
     <footer className="bg-emerald-950 text-emerald-100 border-t border-emerald-900/60 pt-16 pb-8 transition-colors">
@@ -30,26 +28,35 @@ export const Footer: React.FC = () => {
               {t('brandTagline')}
             </p>
             <div className="pt-2 space-y-2 text-sm text-emerald-200/90">
-              <div className="flex items-center gap-2.5">
-                <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Addis Ababa / Finfinnee, Oromia, Ethiopia</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-                <a href="tel:+251911000000" className="hover:text-amber-300 transition-colors">
-                  +251 91 100 0000 / +251 11 000 0000
-                </a>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-                <a href="mailto:info@ohpea.org" className="hover:text-amber-300 transition-colors">
-                  info@ohpea.org
-                </a>
-              </div>
+              {address && (
+                <div className="flex items-center gap-2.5">
+                  <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{address}</span>
+                </div>
+              )}
+              {phones.length > 0 && (
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span dir="ltr">
+                    {phones.map((p, i) => (
+                      <React.Fragment key={p}>
+                        {i > 0 && ' / '}
+                        <a href={`tel:${p.replace(/\s+/g, '')}`} className="hover:text-amber-300 transition-colors">{p}</a>
+                      </React.Fragment>
+                    ))}
+                  </span>
+                </div>
+              )}
+              {emails.length > 0 && (
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-amber-400 shrink-0" />
+                  <a href={`mailto:${emails[0]}`} className="hover:text-amber-300 transition-colors">{emails[0]}</a>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Column 2: 7 Programs */}
+          {/* Column 2: Programs */}
           <div>
             <h3 className="text-base font-semibold text-amber-400 uppercase tracking-wider mb-4">
               {t('footer.colPrograms')}
@@ -58,10 +65,10 @@ export const Footer: React.FC = () => {
               {programs.map((p) => (
                 <li key={p.id}>
                   <Link
-                    to={`/programs/${p.id}`}
+                    to={`/programs/${p.slug}`}
                     className="hover:text-amber-300 transition-colors flex items-center justify-between group"
                   >
-                    <span>{t(p.nameKey as any)}</span>
+                    <span>{localize(p.title, language)}</span>
                   </Link>
                 </li>
               ))}
@@ -97,22 +104,6 @@ export const Footer: React.FC = () => {
               <li>
                 <Link to="/contact" className="hover:text-amber-300 transition-colors">
                   {t('nav.contact')}
-                </Link>
-              </li>
-              <li>
-                <Link to="/member-area" className="hover:text-amber-300 transition-colors flex items-center gap-1.5">
-                  <span>{t('nav.memberArea')}</span>
-                  <span className="text-[10px] bg-emerald-900 text-amber-300 px-1.5 py-0.5 rounded border border-amber-400/30">
-                    {t('common.comingSoon')}
-                  </span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/resources" className="hover:text-amber-300 transition-colors flex items-center gap-1.5">
-                  <span>{t('nav.resources')}</span>
-                  <span className="text-[10px] bg-emerald-900 text-amber-300 px-1.5 py-0.5 rounded border border-amber-400/30">
-                    {t('common.comingSoon')}
-                  </span>
                 </Link>
               </li>
             </ul>

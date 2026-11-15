@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { api, ApiError, PublicStats } from '../lib/ohpea-api-client.js';
+import { api, ApiError, PublicStats } from '../lib/ophea-api-client.js';
 import { fallbackStats } from '../data/fallbackContent.js';
-import { isDemoMode } from '../lib/demoMode.js';
 
 export const useStats = () => {
   const [stats, setStats] = useState<PublicStats>(fallbackStats);
@@ -23,9 +22,7 @@ export const useStats = () => {
           } else {
             setError((err as Error).message || 'Failed to fetch stats');
           }
-          if (!isDemoMode()) {
-            setStats({} as PublicStats);
-          }
+          setStats(fallbackStats);
         }
       })
       .finally(() => {

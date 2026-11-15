@@ -32,8 +32,7 @@ import {
   fallbackPartners,
   fallbackActivities,
 } from '../data/fallbackContent.js';
-import { api } from '../lib/ohpea-api-client.js';
-import { realOrDemo } from '../lib/demoMode.js';
+import { api } from '../lib/ophea-api-client.js';
 
 export const Home: React.FC = () => {
   const { t, language, isRtl } = useTranslation();
@@ -153,15 +152,15 @@ export const Home: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 sm:-mt-16 relative z-20">
         <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-xl border border-stone-200/80 dark:border-stone-800 p-6 sm:p-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 divide-y md:divide-y-0 md:divide-x rtl:md:divide-x-reverse divide-stone-100 dark:divide-stone-800">
-            <StatCounter value={realOrDemo('stats.totalMembers',      stats.totalMembers,      512)} label={t('stats.registeredMembers')} />
+            <StatCounter value={(stats.totalMembers ?? 0)} label={t('stats.registeredMembers')} />
             <div className="pt-4 md:pt-0">
-              <StatCounter value={realOrDemo('stats.accreditedHotels',  stats.accreditedHotels,   87)} label={t('stats.activeMembers')} />
+              <StatCounter value={(stats.accreditedHotels ?? 0)} label={t('stats.activeMembers')} />
             </div>
             <div className="pt-4 md:pt-0">
-              <StatCounter value={realOrDemo('stats.certifiedGuides',   stats.certifiedGuides,   143)} label={t('stats.regionsRepresented')} />
+              <StatCounter value={(stats.certifiedGuides ?? 0)} label={t('stats.regionsRepresented')} />
             </div>
             <div className="pt-4 md:pt-0">
-              <StatCounter value={realOrDemo('stats.trainingGraduates', stats.trainingGraduates, 320)} label={t('stats.activitiesThisYear')} />
+              <StatCounter value={(stats.trainingGraduates ?? 0)} label={t('stats.activitiesThisYear')} />
             </div>
           </div>
         </div>
@@ -341,7 +340,7 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* 9. How to Join OHPEA (4 steps) */}
+      {/* 9. How to Join OPHEA (4 steps) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           title={t('home.howToJoinTitle')}

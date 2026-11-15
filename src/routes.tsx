@@ -9,8 +9,6 @@ import { UpdateDetail } from './pages/UpdateDetail.js';
 import { Membership } from './pages/Membership.js';
 import { Register } from './pages/Register.js';
 import { Contact } from './pages/Contact.js';
-import { MemberAreaLocked } from './pages/MemberAreaLocked.js';
-import { ResourcesLocked } from './pages/ResourcesLocked.js';
 import { Privacy } from './pages/Privacy.js';
 import { Terms } from './pages/Terms.js';
 import { NotFound } from './pages/NotFound.js';
@@ -38,10 +36,6 @@ export const AppRoutes: React.FC = () => {
         <Route path="/membership" element={<Membership />} />
         <Route path="/register" element={<Register />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/member-area" element={<MemberAreaLocked />} />
-        <Route path="/member-area-locked" element={<MemberAreaLocked />} />
-        <Route path="/resources" element={<ResourcesLocked />} />
-        <Route path="/resources-locked" element={<ResourcesLocked />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="*" element={<NotFound />} />

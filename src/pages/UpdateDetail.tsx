@@ -17,7 +17,7 @@ import { PageBanner } from '../components/PageBanner.js';
 import { ShareButtons } from '../components/ShareButtons.js';
 import { CountdownTimer } from '../components/CountdownTimer.js';
 import { formatDate } from '../utils/formatDate.js';
-import { api, Announcement } from '../lib/ohpea-api-client.js';
+import { api, Announcement } from '../lib/ophea-api-client.js';
 import { fallbackAnnouncements } from '../data/fallbackContent.js';
 
 export const UpdateDetail: React.FC = () => {

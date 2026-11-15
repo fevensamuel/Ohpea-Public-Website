@@ -20,7 +20,7 @@ export function Logo({ variant = 'default', className = '' }: { variant?: 'defau
       <div>
         <div className="flex items-center gap-2">
           <span className={`text-xl font-extrabold tracking-tight leading-none ${isLightOrWhite ? 'text-white' : 'text-[#0B3D2E] dark:text-white'}`}>
-            OHPEA
+            OPHEA
           </span>
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E8772E] text-white uppercase tracking-wider">
             Oromia

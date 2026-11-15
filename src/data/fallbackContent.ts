@@ -9,11 +9,11 @@ export const fallbackStats = {
 };
 
 export const fallbackSiteSettings = {
-  name: 'OHPEA',
-  tagline: 'Oromia Hospitality & Tourism Professionals Association',
-  email: 'info@ohpea.org',
-  phone: '+251 11 550 4422',
-  address: 'Finfinnee, Oromia, Ethiopia',
+  name: 'OPHEA',
+  tagline: '',
+  email: '',
+  phone: '',
+  address: '',
 };
 
 export const fallbackLookups = {

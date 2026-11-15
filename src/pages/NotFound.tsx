@@ -29,7 +29,7 @@ export const NotFound: React.FC = () => {
           to="/about"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-semibold text-xs hover:bg-stone-50 dark:hover:bg-stone-800 transition"
         >
-          <span>{t('notFound.aboutOhpea')}</span>
+          <span>{t('notFound.aboutOphea')}</span>
         </Link>
       </div>
     </div>

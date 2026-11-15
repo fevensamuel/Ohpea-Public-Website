@@ -3,7 +3,7 @@
 // Requires the backend to be running at VITE_API_URL (default http://localhost:3000/api).
 // Exits non-zero on the first failure. No fallbacks, no "assumed passing" mode.
 
-import { api, ApiError } from '../src/lib/ohpea-api-client';
+import { api, ApiError } from '../src/lib/ophea-api-client';
 
 const base = (import.meta as any).env?.VITE_API_URL ?? (typeof process !== 'undefined' ? process.env?.VITE_API_URL : undefined) ?? 'http://localhost:3000/api';
 const phone = '+251911000' + String(Math.floor(Math.random() * 9000) + 1000);
@@ -39,7 +39,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\nOHPEA Public API E2E — target ${base}\n`);
+  console.log(`\nOPHEA Public API E2E — target ${base}\n`);
 
   // ── Test 1: stats has exactly 4 numeric fields ───────────────
   await test('GET /public/stats returns exactly 4 numeric fields', async () => {

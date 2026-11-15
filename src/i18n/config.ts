@@ -23,7 +23,7 @@ export const LANGUAGES: Record<StandardLanguage, LanguageOption> = {
 };
 
 export const DEFAULT_LANGUAGE: StandardLanguage = 'en';
-export const LANGUAGE_STORAGE_KEY = 'ohpea_language';
+export const LANGUAGE_STORAGE_KEY = 'ophea_language';
 
 export function normalizeLanguage(raw?: string | null): StandardLanguage {
   if (!raw) return DEFAULT_LANGUAGE;

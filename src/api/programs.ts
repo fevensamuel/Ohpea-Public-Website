@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { api, Program } from '../lib/ohpea-api-client.js';
+import { api, Program } from '../lib/ophea-api-client.js';
 import { fallbackPrograms } from '../data/fallbackContent.js';
 
 export async function getPrograms(): Promise<Program[]> {

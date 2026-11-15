@@ -15,22 +15,15 @@ import {
   Globe,
 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
-import { LockedBadge } from './LockedBadge.js';
+import { usePrograms } from '../hooks/usePrograms.js';
+import { localize } from '../utils/localize.js';
 
 const programIcons = [BookOpen, Shield, Award, Handshake, TrendingUp, Users, Globe];
 
 export function MegaMenu({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const programsList = usePrograms();
 
-  const programsList = [
-    { slug: 'research-and-study', titleKey: 'programs.p1Title', descKey: 'programs.p1Summary' },
-    { slug: 'advocacy', titleKey: 'programs.p2Title', descKey: 'programs.p2Summary' },
-    { slug: 'training-and-awareness', titleKey: 'programs.p3Title', descKey: 'programs.p3Summary' },
-    { slug: 'b2b-bridge', titleKey: 'programs.p4Title', descKey: 'programs.p4Summary', comingSoon: true },
-    { slug: 'investment-bridge', titleKey: 'programs.p5Title', descKey: 'programs.p5Summary', comingSoon: true },
-    { slug: 'member-networking-jobs', titleKey: 'programs.p6Title', descKey: 'programs.p6Summary' },
-    { slug: 'international-relations', titleKey: 'programs.p7Title', descKey: 'programs.p7Summary' },
-  ];
 
   return (
     <div className="w-[680px] p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl grid grid-cols-2 gap-4 text-start">
@@ -62,12 +55,11 @@ export function MegaMenu({ onClose }: { onClose: () => void }) {
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-[#0B3D2E] dark:group-hover:text-[#C9A24A] transition leading-snug">
-                  {t(prog.titleKey)}
+                  {localize(prog.title, language)}
                 </span>
-                {prog.comingSoon && <LockedBadge />}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                {t(prog.descKey)}
+                {localize(prog.summary, language)}
               </p>
             </div>
           </Link>

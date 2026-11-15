@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { api } from '../lib/ohpea-api-client.js';
+import { api } from '../lib/ophea-api-client.js';
 
 export async function subscribeNewsletter(
   email: string,

@@ -1,6 +1,6 @@
-# Oromia Tourism & Hospitality Professionals Association (OHPEA) Public Website
+# Oromia Tourism & Hospitality Professionals Association (OPHEA) Public Website
 
-Official public web portal of the **Oromia Tourism & Hospitality Professionals Association (OHPEA)** / **Waldaa Ogeeyyii Tuurizimii fi Keessummeessuu Oromiyaa**.
+Official public web portal of the **Oromia Tourism & Hospitality Professionals Association (OPHEA)** / **Waldaa Ogeeyyii Tuurizimii fi Keessummeessuu Oromiyaa**.
 
 The site presents the association (mission, vision, objectives, 7 strategic programs), publishes public announcements (news, events, career vacancies, calls for proposals and research), displays live membership statistics, and provides an online multi-step registration form for hospitality practitioners.
 
@@ -44,7 +44,7 @@ Modeled on the Ethiopian Economic Association (EEA) structure:
    - Latest Announcements with tabs (Vacancies, Calls for Proposals, Calls for Research)
    - Don't Miss Out Events (Upcoming & Past)
    - The 7 Core Strategic Programs
-   - How to Join OHPEA (4 steps)
+   - How to Join OPHEA (4 steps)
    - Institutional Partners Grid
    - Recent Activities & Projects
    - About Us Statutory Summary

@@ -11,10 +11,18 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
 import { PageBanner } from '../components/PageBanner.js';
-import { api, ApiError } from '../lib/ohpea-api-client.js';
+import { api, ApiError } from '../lib/ophea-api-client.js';
+import { useSiteSettings } from '../hooks/useSiteSettings.js';
+import { localize } from '../utils/localize.js';
 
 export const Contact: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const { settings } = useSiteSettings();
+  const address = localize(settings.address, language);
+  const phones: string[] = settings.contactPhones ?? [];
+  const emails: string[] = settings.contactEmails ?? [];
+  const mapLink: string = settings.mapLink ?? '';
+  const workingHours: string = settings.workingHours ?? '';
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -118,17 +126,17 @@ export const Contact: React.FC = () => {
                     {t('contact.hqTitle')}
                   </h3>
                   <p className="text-stone-600 dark:text-stone-400 leading-relaxed">
-                    {t('contact.hqAddress')}
+                    {address}
                   </p>
-                  <a
-                    href="https://www.openstreetmap.org/#map=16/9.0105/38.7610"
+                  {mapLink && <a
+                    href={mapLink}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 text-emerald-700 dark:text-amber-400 font-semibold mt-2 hover:underline"
                   >
                     <span>{t('contact.osmLink')}</span>
                     <ExternalLink className="w-3 h-3" />
-                  </a>
+                  </a>}
                 </div>
               </div>
 
@@ -141,12 +149,11 @@ export const Contact: React.FC = () => {
                   <h3 className="font-bold text-stone-900 dark:text-stone-100 text-sm mb-1">
                     {t('contact.phoneTitle')}
                   </h3>
-                  <p className="text-stone-600 dark:text-stone-400">
-                    {t('contact.hotlineLabel')}: +251 11 550 4422
-                  </p>
-                  <p className="text-stone-600 dark:text-stone-400">
-                    {t('contact.mobileLabel')}: +251 91 123 4567
-                  </p>
+                  {phones.map((p) => (
+                    <p key={p} className="text-stone-600 dark:text-stone-400" dir="ltr">
+                      <a href={`tel:${p.replace(/\s+/g, '')}`} className="hover:underline">{p}</a>
+                    </p>
+                  ))}
                 </div>
               </div>
 
@@ -159,8 +166,11 @@ export const Contact: React.FC = () => {
                   <h3 className="font-bold text-stone-900 dark:text-stone-100 text-sm mb-1">
                     {t('contact.emailTitle')}
                   </h3>
-                  <p className="text-stone-600 dark:text-stone-400">{t('contact.generalEmail')}: info@ohpea.org</p>
-                  <p className="text-stone-600 dark:text-stone-400">{t('contact.membershipEmail')}: register@ohpea.org</p>
+                  {emails.map((e) => (
+                    <p key={e} className="text-stone-600 dark:text-stone-400">
+                      <a href={`mailto:${e}`} className="hover:underline">{e}</a>
+                    </p>
+                  ))}
                 </div>
               </div>
 
@@ -174,9 +184,8 @@ export const Contact: React.FC = () => {
                     {t('contact.hoursTitle')}
                   </h3>
                   <p className="text-stone-600 dark:text-stone-400">
-                    {t('contact.hoursText')}
+                    {workingHours}
                   </p>
-                  <p className="text-stone-500 text-[11px] mt-0.5">{t('contact.hoursSubtext')}</p>
                 </div>
               </div>
             </div>
@@ -263,7 +272,7 @@ export const Contact: React.FC = () => {
                         className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
                           errors.phone ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
                         }`}
-                        placeholder="+251 91 123 4567"
+                        placeholder="+2519XXXXXXXX"
                       />
                       {errors.phone && (
                         <p className="text-xs text-red-500 mt-1">{errors.phone}</p>

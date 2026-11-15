@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { api, ApiError, SiteSettings } from '../lib/ohpea-api-client.js';
+import { api, ApiError, SiteSettings } from '../lib/ophea-api-client.js';
 import { LookupData } from '../types.js';
 import { fallbackSiteSettings, fallbackStats, fallbackLookups } from '../data/fallbackContent.js';
 

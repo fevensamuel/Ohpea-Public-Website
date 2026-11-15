@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { api, Region } from '../lib/ohpea-api-client.js';
+import { api, Region } from '../lib/ophea-api-client.js';
 import { fallbackLookups } from '../data/fallbackContent.js';
 
 export async function getLookups(): Promise<any> {

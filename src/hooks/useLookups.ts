@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LookupData } from '../types.js';
-import { api, Region } from '../lib/ohpea-api-client.js';
+import { api, Region } from '../lib/ophea-api-client.js';
 import { fallbackLookups } from '../data/fallbackContent.js';
 
 export const useLookups = () => {

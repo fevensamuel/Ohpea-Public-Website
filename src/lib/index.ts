@@ -1,1 +1,1 @@
-export * from './ohpea-api-client.js';
+export * from './ophea-api-client.js';

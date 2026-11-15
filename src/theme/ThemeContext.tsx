@@ -18,7 +18,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ohpea_theme');
+      const saved = localStorage.getItem('ophea_theme');
       if (saved === 'dark' || saved === 'light') return saved;
       if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
     }
@@ -32,7 +32,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove('dark');
     }
-    localStorage.setItem('ohpea_theme', theme);
+    localStorage.setItem('ophea_theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

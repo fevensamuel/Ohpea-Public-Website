@@ -3,7 +3,7 @@ import { useTranslation } from '../i18n/LanguageContext.js';
 import { PageBanner } from '../components/PageBanner.js';
 import { ProgramCard } from '../components/ProgramCard.js';
 import { SectionHeading } from '../components/SectionHeading.js';
-import { api } from '../lib/ohpea-api-client.js';
+import { api } from '../lib/ophea-api-client.js';
 
 export const Programs: React.FC = () => {
   const { t } = useTranslation();
