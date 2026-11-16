@@ -163,6 +163,7 @@ export const Register: React.FC = () => {
       idNumber: validated.data.nationalId,
       town: validated.data.cityTown,
       organizationName: validated.data.organization,
+      preferredLanguage: ['en', 'om', 'am'].includes(language) ? language : 'en',
     };
 
     for (const [key, value] of Object.entries(transformed)) {

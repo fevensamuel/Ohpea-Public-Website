@@ -1,3 +1,4 @@
+import { localize } from '../utils/localize.js';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -385,7 +386,7 @@ export const Home: React.FC = () => {
           title={t('home.partnersTitle')}
           className="mb-10"
         />
-        <PartnerGrid partners={fallbackPartners} />
+        {partners.length > 0 && <PartnerGrid partners={partners} />}
       </section>
 
       {/* 11. Recent Activities & Projects */}
@@ -395,31 +396,41 @@ export const Home: React.FC = () => {
           className="mb-10"
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {fallbackActivities.map((act) => (
-            <div
-              key={act.id}
-              className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition text-start flex flex-col"
-            >
-              <div className="h-40 bg-stone-100 dark:bg-stone-800 flex items-center justify-center p-4 border-b border-stone-200 dark:border-stone-800">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                  {act.category}
-                </span>
-              </div>
-              <div className="p-5 flex-1 flex flex-col justify-between">
-                <div>
-                  <span className="text-[10px] text-stone-400 block mb-1">
-                    {new Date(act.activityDate).toLocaleDateString()}
-                  </span>
-                  <h4 className="text-sm font-bold text-stone-900 dark:text-white line-clamp-2">
-                    {act.title[language] || act.title.en}
-                  </h4>
-                  <p className="text-xs text-stone-600 dark:text-stone-400 mt-2 line-clamp-2">
-                    {act.description[language] || act.description.en}
-                  </p>
+          {activities.map((act) => {
+            const photo = act.imageUrl || (Array.isArray(act.photos) ? act.photos[0] : null);
+            const dateValue = act.activityDate || act.date;
+            const heading = localize(act.title, language);
+            const text = localize(act.summary ?? act.description, language);
+            return (
+              <div
+                key={act.id}
+                className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition text-start flex flex-col"
+              >
+                <div className="h-40 bg-stone-100 dark:bg-stone-800 flex items-center justify-center border-b border-stone-200 dark:border-stone-800 overflow-hidden">
+                  {photo ? (
+                    <img src={photo} alt={heading} className="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider p-4">
+                      {act.category || ''}
+                    </span>
+                  )}
+                </div>
+                <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    {dateValue && (
+                      <span className="text-[10px] text-stone-400 block mb-1">
+                        {new Date(dateValue).toLocaleDateString()}
+                      </span>
+                    )}
+                    <h4 className="text-sm font-bold text-stone-900 dark:text-white line-clamp-2">{heading}</h4>
+                    {text && (
+                      <p className="text-xs text-stone-600 dark:text-stone-400 mt-2 line-clamp-2">{text}</p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

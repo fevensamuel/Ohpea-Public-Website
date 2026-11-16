@@ -165,6 +165,16 @@ export const UpdateDetail: React.FC = () => {
             </div>
           )}
 
+          {/* Cover image */}
+          {(item.coverImageUrl || item.coverImage) && (
+            <img
+              src={item.coverImageUrl || item.coverImage}
+              alt={title}
+              className="w-full max-h-96 object-cover rounded-2xl border border-stone-200 dark:border-stone-800"
+              loading="lazy"
+            />
+          )}
+
           {/* Summary Lead */}
           {summary && (
             <p className="text-base sm:text-lg font-medium text-stone-800 dark:text-stone-200 leading-relaxed border-l-4 border-amber-500 pl-4">
@@ -174,8 +184,33 @@ export const UpdateDetail: React.FC = () => {
 
           {/* Main Body */}
           <div className="prose dark:prose-invert max-w-none text-stone-700 dark:text-stone-300 text-sm sm:text-base leading-relaxed space-y-4">
-            <p>{body}</p>
+            <p className="whitespace-pre-line">{body}</p>
           </div>
+
+          {(item.attachmentUrl || item.externalLink) && (
+            <div className="flex flex-wrap gap-3">
+              {item.attachmentUrl && (
+                <a
+                  href={item.attachmentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-stone-300 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800"
+                >
+                  Download attachment
+                </a>
+              )}
+              {item.externalLink && (
+                <a
+                  href={item.externalLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-stone-300 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800"
+                >
+                  More information
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Actions & Next Steps */}
           <div className="pt-8 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center justify-between gap-4">
@@ -188,13 +223,25 @@ export const UpdateDetail: React.FC = () => {
             </Link>
 
             {item.registrationOpen && (
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition"
-              >
-                <span>{t('update.applyOnline')}</span>
-                <ArrowIcon className="w-4 h-4" />
-              </Link>
+              item.registrationUrl ? (
+                <a
+                  href={item.registrationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition"
+                >
+                  <span>{t('update.applyOnline')}</span>
+                  <ArrowIcon className="w-4 h-4" />
+                </a>
+              ) : (
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition"
+                >
+                  <span>{t('update.applyOnline')}</span>
+                  <ArrowIcon className="w-4 h-4" />
+                </Link>
+              )
             )}
           </div>
         </div>

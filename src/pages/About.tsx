@@ -12,6 +12,7 @@ import { useTranslation } from '../i18n/LanguageContext.js';
 import { PageBanner } from '../components/PageBanner.js';
 import { SectionHeading } from '../components/SectionHeading.js';
 import { PartnerGrid } from '../components/PartnerGrid.js';
+import { useSiteSettings } from '../hooks/useSiteSettings.js';
 import { api, Objective, Partner, LocalizedText } from '../lib/ophea-api-client.js';
 
 function localized(v: LocalizedText | undefined, lang: string): string {
@@ -24,6 +25,9 @@ export const About: React.FC = () => {
   const { t, language, isRtl } = useTranslation();
   const location = useLocation();
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+  const { settings } = useSiteSettings();
+  const missionText = localized(settings?.mission, language) || t('brandTagline');
+  const visionText = localized(settings?.vision, language) || t('hero.subtitle');
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const [objectives, setObjectives] = useState<Objective[]>([]);
@@ -59,10 +63,17 @@ export const About: React.FC = () => {
   const generalObjective = objectives.find((o) => o.kind === 'general');
 
   // 13 Specific Objectives (dynamically translated, static content)
-  const specificObjectives = Array.from({ length: 13 }, (_, i) => ({
-    title: t(`about.objSpecific${i + 1}Title` as any),
-    desc: t(`about.objSpecific${i + 1}Desc` as any),
-  }));
+  const adminSpecific = objectives.filter((o) => o.kind === 'specific');
+  const specificObjectives =
+    adminSpecific.length > 0
+      ? adminSpecific.map((o) => ({
+          title: localized(o.title, language),
+          desc: localized(o.description, language),
+        }))
+      : Array.from({ length: 13 }, (_, i) => ({
+          title: t(`about.objSpecific${i + 1}Title` as any),
+          desc: t(`about.objSpecific${i + 1}Desc` as any),
+        }));
 
   return (
     <div className="space-y-16 pb-16">
@@ -110,7 +121,7 @@ export const About: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold mb-2">{t('about.mission')}</h3>
               <p className="text-sm text-emerald-100/90 leading-relaxed">
-                {t('brandTagline')}
+                {missionText}
               </p>
             </div>
 
@@ -120,7 +131,7 @@ export const About: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold mb-2">{t('about.vision')}</h3>
               <p className="text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
-                {t('hero.subtitle')}
+                {visionText}
               </p>
             </div>
           </section>
@@ -136,7 +147,7 @@ export const About: React.FC = () => {
               {localized(generalObjective.title, language) || 'General Objective'}
             </span>
             <p className="text-base sm:text-xl font-semibold text-stone-900 dark:text-stone-100 max-w-4xl mx-auto leading-relaxed italic">
-              &ldquo;{localized(generalObjective.description, language)}&rdquo;
+              &ldquo;{localized(generalObjective.description, language) || localized(generalObjective.title, language)}&rdquo;
             </p>
           </div>
         </section>

@@ -15,6 +15,9 @@ export const Footer: React.FC = () => {
   const phones: string[] = settings.contactPhones ?? [];
   const emails: string[] = settings.contactEmails ?? [];
   const address = localize(settings.address, language);
+  const tagline = localize(settings.tagline, language) || t('brandTagline');
+  const socialLinks: [string, string][] = Object.entries((settings.socialLinks ?? settings.social ?? {}) as Record<string, string>)
+    .filter(([, v]) => typeof v === 'string' && /^https?:\/\//i.test(v));
   const currentYear = new Date().getFullYear();
 
   return (
@@ -25,7 +28,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-4">
             <Logo variant="light" size="md" />
             <p className="text-sm text-emerald-200/80 leading-relaxed pt-2">
-              {t('brandTagline')}
+              {tagline}
             </p>
             <div className="pt-2 space-y-2 text-sm text-emerald-200/90">
               {address && (
@@ -54,6 +57,22 @@ export const Footer: React.FC = () => {
                 </div>
               )}
             </div>
+            {socialLinks.length > 0 && (
+              <div className="flex flex-wrap gap-3 pt-3">
+                {socialLinks.map(([name, url]) => (
+                  <a
+                    key={name}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-800 text-xs capitalize hover:text-amber-300 hover:border-amber-400 transition-colors"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    {name}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Column 2: Programs */}

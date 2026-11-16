@@ -16,6 +16,14 @@ import {
   ArrowRight,
   ArrowLeft,
   CheckCircle2,
+  Bookmark,
+  Layers,
+  GraduationCap,
+  Briefcase,
+  Building2,
+  Heart,
+  Star,
+  Lightbulb,
 } from 'lucide-react';
 import { Program } from '../types.js';
 import { useTranslation } from '../i18n/LanguageContext.js';
@@ -29,11 +37,19 @@ const iconMap: Record<string, React.ElementType> = {
   TrendingUp,
   Users,
   Globe,
+  Bookmark,
+  Layers,
+  GraduationCap,
+  Briefcase,
+  Building2,
+  Heart,
+  Star,
+  Lightbulb,
 };
 
 export function ProgramCard({ program, index }: { program: Program; index: number }) {
   const { t, language, isRtl } = useTranslation();
-  const IconComponent = iconMap[program.icon] || Award;
+  const IconComponent = iconMap[(program as any).icon as string] || Award;
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   const title = localize(program.title, language);
