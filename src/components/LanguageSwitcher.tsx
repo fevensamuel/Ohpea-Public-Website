@@ -92,7 +92,7 @@ export function LanguageSwitcher({ variant = 'dropdown', className = '' }: Langu
       {isOpen && (
         <div
           role="listbox"
-          className={`absolute top-full mt-1.5 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl py-2 z-50 ${
+          className={`ohpea-language-menu absolute top-full mt-2 w-64 max-h-[min(70vh,24rem)] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl py-2 z-[100] ${
             isRtl ? 'start-0' : 'end-0'
           }`}
         >

@@ -9,13 +9,14 @@ import { Calendar, MapPin, Building, ArrowRight, ArrowLeft } from 'lucide-react'
 import { Announcement } from '../types.js';
 import { useTranslation } from '../i18n/LanguageContext.js';
 import { formatDate } from '../utils/formatDate.js';
+import { localize } from '../utils/localize.js';
 
 export function AnnouncementCard({ announcement }: { announcement: Announcement }) {
   const { t, language, isRtl } = useTranslation();
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
-  const title = announcement.title[language] || announcement.title.en;
-  const summary = announcement.summary[language] || announcement.summary.en;
+  const title = localize(announcement.title, language);
+  const summary = localize(announcement.summary, language);
 
   const isClosingSoon = announcement.deadline
     ? new Date(announcement.deadline).getTime() - Date.now() < 7 * 86400000 &&

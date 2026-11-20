@@ -64,7 +64,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full transition-all duration-300">
+      <header className={`sticky top-0 z-40 w-full transition-all duration-300 ${location.pathname === '/' ? 'ohpea-site-header' : ''}`}>
         {/* 1. Utility Top Bar (Dark Green like EEA) */}
         <div className="bg-[#0B3D2E] text-slate-200 border-b border-[#C9A24A]/25 text-xs py-1.5 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
@@ -246,7 +246,12 @@ export function Header() {
             </nav>
 
             {/* Right Action: Orange CTA button & Mobile Hamburger */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {location.pathname === '/' && (
+                <span className="ohpea-home-language hidden sm:inline-flex">
+                  <LanguageSwitcher variant="dropdown" />
+                </span>
+              )}
               <Link
                 to="/register"
                 className="hidden sm:inline-flex items-center gap-1.5 bg-[#E8772E] hover:bg-[#CF6420] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md shadow-orange-950/15 transition-all hover:scale-102"

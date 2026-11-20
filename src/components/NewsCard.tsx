@@ -9,17 +9,19 @@ import { Calendar, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Announcement } from '../types.js';
 import { useTranslation } from '../i18n/LanguageContext.js';
 import { formatDate } from '../utils/formatDate.js';
+import { localize } from '../utils/localize.js';
 
 export function NewsCard({ news }: { news: Announcement }) {
   const { t, language, isRtl } = useTranslation();
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
-  const title = news.title[language] || news.title.en;
-  const summary = news.summary[language] || news.summary.en;
+  const title = localize(news.title, language);
+  const summary = localize(news.summary, language);
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-md hover:border-[#0B3D2E]/40 transition duration-200 flex flex-col justify-between text-start group">
       <div>
+        {news.coverImageUrl && <img src={news.coverImageUrl} alt={title} loading="lazy" className="w-full h-40 object-cover rounded-xl mb-4" />}
         <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-2">
           <Calendar className="w-3.5 h-3.5" />
           <span>{formatDate(news.publishedAt, language)}</span>

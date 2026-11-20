@@ -1,475 +1,164 @@
-import React, { useState } from 'react';
-import { z } from 'zod';
-import { Controller, useForm } from 'react-hook-form';
-import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { AlertCircle, CheckCircle2, UploadCloud, FileText } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
-import { useLookups } from '../hooks/useLookups.js';
 import { PageBanner } from '../components/PageBanner.js';
-import { api, ApiError } from '../lib/ophea-api-client.js';
+import { api, ApiError, Region } from '../lib/ophea-api-client.js';
 
-const isFile = (value: unknown): value is File =>
-  typeof File !== 'undefined' && value instanceof File;
-
-const registrationSchema = z.object({
-  membershipCategory: z.string().min(1, 'Please select a membership category.')
-    .refine((value) => ['Professional', 'Entrepreneur', 'Corporate', 'Associate'].includes(value), 'Select a valid membership category.'),
-  fullName: z.string().trim().min(1, 'Full name is required.'),
-  gender: z.string().refine((value): boolean => value === 'Male' || value === 'Female', 'Please select a gender.'),
-  dateOfBirth: z.string(),
-  nationality: z.string().trim().min(1, 'Nationality is required.'),
-  nationalId: z.string().trim().min(5, 'Enter your National ID / Fayda number.'),
-  phone: z.string().trim().min(1, 'Phone number is required.')
-    .regex(/^\+251[\s-]?[97](?:[\s-]?\d){8}$/, 'Enter a phone number in +251 format.'),
-  email: z.string().trim().min(1, 'Email is required.').email('Enter a valid email address.'),
-  region: z.string(),
-  zoneSubCity: z.string(),
-  woreda: z.string(),
-  cityTown: z.string(),
-  emergencyContactName: z.string(),
-  emergencyContactPhone: z.string(),
-  employmentStatus: z.enum(['Employed', 'Self-Employed', 'Freelancer', 'Job Seeker']),
-  organization: z.string(),
-  jobTitle: z.string(),
-  businessTin: z.string(),
-  yearEstablished: z.string(),
-  industrySubSectors: z.array(z.string()),
-  highestQualification: z.string(),
-  fieldOfStudy: z.string(),
-  institutionName: z.string(),
-  coreSkills: z.string(),
-  areasOfExpertise: z.array(z.string()),
-  areasOfInterest: z.array(z.string()),
-  idDocument: z.custom<File | null>((value): value is File | null => value === null || isFile(value))
-    .refine((value): boolean => value !== null, 'Please upload your ID document.'),
-  cvCompanyProfile: z.custom<File | null>((value): value is File | null => value === null || isFile(value))
-    .refine((value): boolean => value !== null, 'Please upload your CV or company profile.'),
-  academicCertificates: z.array(z.custom<File>(isFile)),
-  declaration: z.boolean().refine((value) => value, 'Please confirm the declaration.'),
-});
-
-type RegistrationValues = z.infer<typeof registrationSchema>;
-type RegistrationField = keyof RegistrationValues;
-
-const defaultValues: RegistrationValues = {
-  membershipCategory: '',
-  fullName: '',
-  gender: '',
-  dateOfBirth: '',
-  nationality: 'Ethiopian',
-  nationalId: '',
-  phone: '',
-  email: '',
-  region: '',
-  zoneSubCity: '',
-  woreda: '',
-  cityTown: '',
-  emergencyContactName: '',
-  emergencyContactPhone: '',
-  employmentStatus: 'Employed',
-  organization: '',
-  jobTitle: '',
-  businessTin: '',
-  yearEstablished: '',
-  industrySubSectors: [],
-  highestQualification: '',
-  fieldOfStudy: '',
-  institutionName: '',
-  coreSkills: '',
-  areasOfExpertise: [],
-  areasOfInterest: [],
-  idDocument: null,
-  cvCompanyProfile: null,
-  academicCertificates: [],
-  declaration: false,
+const copy: Record<string, Record<string, string>> = {
+  en: {
+    official:'Official Membership Registration Form', tagline:'Empowering Hospitality Excellence, Innovation & Entrepreneurship Across Oromia',
+    intro:'Complete all applicable sections. Fields marked * are required.', s1:'1. Membership Category Selection', s2:'2. Personal Information', s3:'3. Current Employment & Business Status', s4:'4. Educational Qualifications', s5:'5. Professional Certifications & Licenses', s6:'6. Work & Entrepreneurial Experience', s7:'7. Special Skills & Languages', s8:'8. Areas of Expertise & Association Interests', s9:'9. Membership Fee Schedule & Payment Details', s10:'10. Supporting Documents Checklist', s11:'11. Declaration & Agreement',
+    categoryHelp:'Select the category that best describes your current role in hospitality and tourism.', professional:'Hospitality Professional', entrepreneur:'Hospitality Entrepreneur / Business Owner', corporate:'Corporate / Institutional Member', associate:'Associate Member',
+    fullName:"Full Name (First, Father's, Grandfather's)", gender:'Gender', male:'Male', female:'Female', dob:'Date of Birth', nationality:'Nationality', nationalId:'National ID / Fayda ID / Passport No.', phone:'Primary Phone Number', secondaryPhone:'Secondary / WhatsApp Number', email:'Email Address', region:'Region / City Administration', zone:'Zone / Sub-City', woreda:'Woreda / Kebele / House No.', city:'City / Town', emergencyName:'Emergency Contact Full Name', relationship:'Relationship to Applicant', emergencyPhone:'Emergency Contact Phone', alternatePhone:'Alternate Emergency Phone',
+    employment:'Current Employment Status', employed:'Employed (Full/Part-time)', selfEmployed:'Self-Employed / Entrepreneur', freelancer:'Freelancer / Consultant', jobSeeker:'Job Seeker', organization:'Current Organization / Business Name', jobTitle:'Current Job Title / Position', workplace:'Workplace Location (City / Zone)', yearsRole:'Years in Current Role', tin:'Business TIN / Registration No. (Entrepreneurs)', established:'Year Established & Number of Employees', industry:'Business / Industry Sub-Sector (select all that apply)',
+    hotel:'Hotel / Resort / Lodge', restaurant:'Restaurant / Cafe / Catering', tour:'Tour & Travel Agency', events:'Event Management & MICE', education:'Hospitality Education & Training', supply:'Supply Chain / Hospitality Tech', eco:'Eco-Tourism / Cultural Heritage', other:'Other',
+    qualification:'Qualification Level (PhD, MSc, BSc, TVET, Certificate)', field:'Field of Study / Specialization', institution:'Institution / University Name', country:'Country', graduation:'Graduation Year', addRows:'Complete up to the available rows; leave unused rows blank.', certification:'Certification / License Name', issuer:'Issuing Body / Organization', issueDate:'Issue Date', expiryDate:'Expiry Date (if applicable)', experienceOrg:'Organization / Business Name', responsibilities:'Key Responsibilities & Achievements', startDate:'Start Date (MM/YYYY)', endDate:'End Date (MM/YYYY)', totalYears:'Total Cumulative Years of Experience in Hospitality / Tourism',
+    languageProficiency:'Language Proficiency (Basic, Conversational, Fluent, or Native)', afaan:'Afaan Oromoo', amharic:'Amharic', english:'English', arabic:'Arabic', french:'French', technical:'Technical & Hospitality Software Skills', core:'Core Industry & Specialized Skills', expertise:'Areas of Expertise Acquired (mentor, trainer, or consultant)', interests:'Areas of Interest in OHPEA',
+    expertise1:'Hotel & Resort Operations', expertise2:'Food & Beverage / Culinary Arts', expertise3:'Eco-Tourism & Cultural Tourism', expertise4:'Hospitality Entrepreneurship & Planning', expertise5:'Marketing, Branding & Digital Presence', expertise6:'Human Resources & Staff Training', expertise7:'Quality Assurance & Customer Experience', expertise8:'Financial & Revenue Management', expertise9:'Event & Conference Management',
+    interest1:'Networking & Business Partnerships', interest2:'Professional Development & Workshops', interest3:'Mentorship (Seeking / Becoming a Mentor)', interest4:'Policy Advocacy & Industry Representation', interest5:'Access to Finance & Investment', interest6:'Research & Oromia Tourism Promotion', interest7:'Volunteering on Association Committees', interest8:'Job Placement & Career Support',
+    feeNote:'Please confirm the current tariff with the OHPEA Secretariat before payment.', feeCategory:'Membership Category', regFee:'One-Time Registration Fee', annual:'Annual Subscription', total:'Total Due Upon Joining', associateFee:'Associate / Student Member', professionalFee:'Hospitality Professional', entrepreneurFee:'Hospitality Entrepreneur / Business Owner', corporateFee:'Corporate / Institutional Member', bank:'Official Bank & Mobile Money Payment Details', accountHolder:'Account Holder: Oromia Hospitality Professionals and Entrepreneurs Association (OHPEA)', platform:'Bank / Payment Platform', account:'Account Number / Merchant ID', branch:'Branch / Payment Note', cbo:'Cooperative Bank of Oromia (CBO)', cbe:'Commercial Bank of Ethiopia (CBE)', awash:'Awash Bank', mobileMoney:'Mobile Money (Telebirr / CBE Birr / E-Birr)', paymentConfirm:'Applicant Payment Confirmation', paymentMethod:'Payment Method', transfer:'Bank Deposit / Transfer', cash:'Cash at Office', bankUsed:'Bank / Platform Used', receipt:'Transaction / Receipt Reference No.', amount:'Amount Paid (ETB) & Date',
+    docsHelp:'Upload clear copies of the following supporting documents. PDF, JPG, and PNG files are accepted.', photo:'Passport-size photograph (or digital photo)', idCopy:'Copy of National ID / Fayda ID / Passport', cv:'Updated Curriculum Vitae (CV) or Company Profile', academicDocs:'Academic Degrees / TVET Certificates', licenses:'Professional Licenses or Business Registration', paymentProof:'Proof of Membership Fee Payment (bank slip / screenshot)', upload:'Choose file(s)', noFile:'No file selected', declarationText:'I hereby apply for membership in OHPEA. I certify that all information provided is true, complete, and accurate to the best of my knowledge. I agree to abide by the Association bylaws, code of ethics, and regulations, and to pay the required annual membership dues promptly.', applicantName:"Applicant's Full Name", signature:"Applicant's Signature (type full name)", date:'Date (DD/MM/YYYY)', submit:'Submit Membership Application', submitting:'Submitting application…', success:'Application received', successText:'Your official membership application has been submitted successfully.',
+  },
+  om: {
+    official:'Unka Galmee Miseensummaa Sirnaawaa', tagline:'Oromiyaa keessatti ogummaa keessummeessuu, kalaqaafi abbootii hojii jajjabeessuu', intro:'Kutaa si ilaallatu hunda guuti. Bakkeewwan * mallatteeffaman dirqama.', s1:'1. Ramaddii Miseensummaa', s2:'2. Odeeffannoo Dhuunfaa', s3:'3. Hojii fi Haala Daldalaa Amma', s4:'4. Barnoota', s5:'5. Ragaa Ogummaa fi Hayyama', s6:'6. Muuxannoo Hojii fi Daldalaa', s7:'7. Dandeettii Addaa fi Afaanota', s8:'8. Muuxannoo fi Fedhii Waldaa', s9:'9. Kaffaltii Miseensummaa fi Odeeffannoo Kaffaltii', s10:'10. Tarree Sanadoota Deeggarsaa', s11:'11. Ibsa fi Waliigaltee', categoryHelp:'Ramaddii gahee kee damee keessummeessuu fi tuurizimii keessatti ibsu filadhu.', professional:'Ogeessa Keessummeessuu', entrepreneur:'Abbaa Daldalaa Keessummeessuu', corporate:'Miseensa Dhaabbataa', associate:'Miseensa Walqabataa', fullName:'Maqaa Guutuu', gender:'Saala', male:'Dhiira', female:'Dubartii', dob:'Guyyaa Dhalootaa', nationality:'Lammummaa', nationalId:'Lakkoofsa Eenyummaa / Faydaa / Paaspoortii', phone:'Lakkoofsa Bilbila Ijoo', secondaryPhone:'Bilbila Lammaffaa / WhatsApp', email:'Imeelii', region:'Naannoo / Bulchiinsa Magaalaa', zone:'Godina / Kutaa Magaalaa', woreda:'Aanaa / Ganda / Lakkoofsa Manaa', city:'Magaalaa', emergencyName:'Maqaa Nama Yeroo Balaa', relationship:'Hariiroo', emergencyPhone:'Bilbila Nama Yeroo Balaa', alternatePhone:'Bilbila Biraa', employment:'Haala Hojii Amma', employed:'Hojii Qacarrii', selfEmployed:'Ofiin Hojjeataa / Abbaa Daldalaa', freelancer:'Bilisa / Gorsaa', jobSeeker:'Hojii Barbaadaa', organization:'Maqaa Dhaabbata / Daldalaa', jobTitle:'Sadarkaa Hojii', workplace:'Bakka Hojii', yearsRole:'Waggaa Gahee Amma', tin:'TIN / Lakkoofsa Galmee Daldalaa', established:'Waggaa Hundeeffame fi Baay’ina Hojjettootaa', industry:'Damee Daldalaa', hotel:'Hoteela / Resort / Lodge', restaurant:'Mana Nyaataa / Kaafee / Nyaata Qopheessuu', tour:'Ejensii Imala', events:'Bulchiinsa Sagantaa fi MICE', education:'Barnoota Keessummeessuu', supply:'Dhiyeessii / Teeknooloojii', eco:'Tuurizimii Naannoo / Aadaa', other:'Kan Biraa', qualification:'Sadarkaa Barnootaa', field:'Damee Barnootaa', institution:'Maqaa Dhaabbata Barnootaa', country:'Biyya', graduation:'Waggaa Eebbifame', addRows:'Tarreewwan hin barbaachifne duwwaa dhiisi.', certification:'Maqaa Ragaa / Hayyamaa', issuer:'Qaama Ragaa Kenne', issueDate:'Guyyaa Kenname', expiryDate:'Guyyaa Xumuraa', experienceOrg:'Maqaa Dhaabbata', responsibilities:'Itti Gaafatamummaa fi Milkaa’ina', startDate:'Guyyaa Jalqabaa', endDate:'Guyyaa Xumuraa', totalYears:'Waggaa Muuxannoo Waliigalaa', languageProficiency:'Sadarkaa Afaanii', afaan:'Afaan Oromoo', amharic:'Amaariffa', english:'Ingiliffa', arabic:'Arabiffa', french:'Faransaayiffa', technical:'Dandeettii Teeknooloojii Hojii', core:'Dandeettii Ijoo Damee', expertise:'Damee Ogeessummaa', interests:'Fedhii OHPEA Keessatti', feeNote:'Kaffaltii dura Waajjira OHPEA mirkaneessi.', feeCategory:'Ramaddii Miseensummaa', regFee:'Kaffaltii Galmee', annual:'Kaffaltii Waggaa', total:'Waliigala Kaffaltii', associateFee:'Miseensa Walqabataa / Barataa', professionalFee:'Ogeessa Keessummeessuu', entrepreneurFee:'Abbaa Daldalaa', corporateFee:'Miseensa Dhaabbataa', bank:'Odeeffannoo Baankii fi Kaffaltii Bilbilaa', accountHolder:'Abbaa Herregaa: OHPEA', platform:'Baankii / Tajaajila Kaffaltii', account:'Lakkoofsa Herregaa', branch:'Damee / Yaadannoo', cbo:'Baankii Cooperative Oromiyaa', cbe:'Baankii Daldala Itoophiyaa', awash:'Baankii Awash', mobileMoney:'Kaffaltii Bilbilaa', paymentConfirm:'Mirkaneessa Kaffaltii', paymentMethod:'Mala Kaffaltii', transfer:'Baankii', cash:'Maallaqa Waajjiraatti', bankUsed:'Baankii / Tajaajila', receipt:'Lakkoofsa Ragaa Kaffaltii', amount:'Maallaqa Kaffalame (ETB) fi Guyyaa', docsHelp:'Sanadoota armaan gadii olkaa’i. PDF, JPG fi PNG ni fudhatama.', photo:'Suuraa paaspoortii', idCopy:'Waraqaa Eenyummaa / Faydaa / Paaspoortii', cv:'CV ykn Ibsa Dhaabbataa', academicDocs:'Ragaa Barnootaa', licenses:'Hayyama Ogummaa ykn Galmee Daldalaa', paymentProof:'Ragaa Kaffaltii', upload:'Faayilii filadhu', noFile:'Faayiliin hin filatamne', declarationText:'Miseensa OHPEA ta’uuf nan iyyadha. Odeeffannoon ani kenne dhugaa fi guutuu ta’uu mirkaneessa. Seera, naamusaafi dambii Waldaa nan kabaja; kaffaltii miseensummaa waggaa nan kaffala.', applicantName:'Maqaa Iyyataa', signature:'Mallattoo (maqaa guutuu barreessi)', date:'Guyyaa', submit:'Iyyata Galchi', submitting:'Iyyata ergaa jira…', success:'Iyyatni fudhatame', successText:'Iyyatni miseensummaa kee milkaa’inaan ergame.'
+  },
+  am: {
+    official:'ይፋዊ የአባልነት ምዝገባ ቅጽ', tagline:'በኦሮሚያ የሆቴልና ቱሪዝም ሙያን፣ ፈጠራን እና ሥራ ፈጠራን ማበረታታት', intro:'የሚመለከቱዎትን ክፍሎች ይሙሉ። * የተሰየሙት አስፈላጊ ናቸው።', s1:'1. የአባልነት ምድብ', s2:'2. የግል መረጃ', s3:'3. የአሁኑ የሥራና የንግድ ሁኔታ', s4:'4. የትምህርት ብቃት', s5:'5. የሙያ ሰርተፊኬቶችና ፈቃዶች', s6:'6. የሥራና የሥራ ፈጠራ ልምድ', s7:'7. ልዩ ክህሎቶችና ቋንቋዎች', s8:'8. የሙያ መስኮችና የማህበሩ ፍላጎቶች', s9:'9. የአባልነት ክፍያና የክፍያ ዝርዝር', s10:'10. የድጋፍ ሰነዶች ዝርዝር', s11:'11. መግለጫና ስምምነት', categoryHelp:'በሆቴልና ቱሪዝም ዘርፍ ያለዎትን ሚና የሚገልጽ ምድብ ይምረጡ።', professional:'የሆቴል ባለሙያ', entrepreneur:'የሆቴል ንግድ ባለቤት', corporate:'ድርጅታዊ አባል', associate:'ተባባሪ አባል', fullName:'ሙሉ ስም', gender:'ፆታ', male:'ወንድ', female:'ሴት', dob:'የትውልድ ቀን', nationality:'ዜግነት', nationalId:'ብሔራዊ መታወቂያ / ፋይዳ / ፓስፖርት ቁጥር', phone:'ዋና ስልክ ቁጥር', secondaryPhone:'ሁለተኛ / WhatsApp ስልክ', email:'ኢሜይል አድራሻ', region:'ክልል / ከተማ አስተዳደር', zone:'ዞን / ክፍለ ከተማ', woreda:'ወረዳ / ቀበሌ / የቤት ቁጥር', city:'ከተማ', emergencyName:'የአደጋ ጊዜ ተጠሪ ሙሉ ስም', relationship:'ከአመልካቹ ጋር ያለ ግንኙነት', emergencyPhone:'የአደጋ ጊዜ ስልክ', alternatePhone:'ተጨማሪ የአደጋ ጊዜ ስልክ', employment:'የአሁኑ የሥራ ሁኔታ', employed:'ተቀጣሪ', selfEmployed:'የራሱ ሥራ / ነጋዴ', freelancer:'ነፃ ባለሙያ / አማካሪ', jobSeeker:'ሥራ ፈላጊ', organization:'የድርጅት / ንግድ ስም', jobTitle:'የሥራ መደብ', workplace:'የሥራ ቦታ', yearsRole:'በአሁኑ መደብ ያሉት ዓመታት', tin:'የንግድ TIN / የምዝገባ ቁጥር', established:'የተመሠረተበት ዓመትና የሠራተኞች ብዛት', industry:'የንግድ / ኢንዱስትሪ ንዑስ ዘርፍ', hotel:'ሆቴል / ሪዞርት / ሎጅ', restaurant:'ምግብ ቤት / ካፌ / ካተሪንግ', tour:'የጉዞ ድርጅት', events:'የዝግጅት አስተዳደር', education:'የሆቴል ትምህርትና ሥልጠና', supply:'የአቅርቦት ሰንሰለት / ቴክኖሎጂ', eco:'ኢኮ ቱሪዝም / ባህላዊ ቅርስ', other:'ሌላ', qualification:'የትምህርት ደረጃ', field:'የትምህርት መስክ', institution:'የተቋም / ዩኒቨርሲቲ ስም', country:'አገር', graduation:'የተመረቁበት ዓመት', addRows:'የማይጠቀሙባቸውን ረድፎች ባዶ ይተዉ።', certification:'የሰርተፊኬት / ፈቃድ ስም', issuer:'የሰጠው ድርጅት', issueDate:'የተሰጠበት ቀን', expiryDate:'የሚያበቃበት ቀን', experienceOrg:'የድርጅት ስም', responsibilities:'ዋና ኃላፊነቶችና ስኬቶች', startDate:'የመጀመሪያ ቀን', endDate:'የመጨረሻ ቀን', totalYears:'ጠቅላላ የልምድ ዓመታት', languageProficiency:'የቋንቋ ብቃት ደረጃ', afaan:'ኦሮምኛ', amharic:'አማርኛ', english:'እንግሊዝኛ', arabic:'ዓረብኛ', french:'ፈረንሳይኛ', technical:'የቴክኖሎጂና የሆቴል ሶፍትዌር ክህሎቶች', core:'ዋና የዘርፍ ክህሎቶች', expertise:'የሙያ ልዩ ችሎታዎች', interests:'በOHPEA ያሉ ፍላጎቶች', feeNote:'ከመክፈልዎ በፊት የአሁኑን ታሪፍ ከOHPEA ሴክሬታሪያት ያረጋግጡ።', feeCategory:'የአባልነት ምድብ', regFee:'የአንድ ጊዜ ምዝገባ ክፍያ', annual:'ዓመታዊ ክፍያ', total:'ጠቅላላ ክፍያ', associateFee:'ተባባሪ / ተማሪ', professionalFee:'የሆቴል ባለሙያ', entrepreneurFee:'የሆቴል ንግድ ባለቤት', corporateFee:'ድርጅታዊ አባል', bank:'የባንክና የሞባይል ክፍያ ዝርዝር', accountHolder:'የሂሳብ ባለቤት: OHPEA', platform:'ባንክ / የክፍያ መድረክ', account:'የሂሳብ ቁጥር', branch:'ቅርንጫፍ / ማስታወሻ', cbo:'የኦሮሚያ ኮኦፕሬቲቭ ባንክ', cbe:'የኢትዮጵያ ንግድ ባንክ', awash:'አዋሽ ባንክ', mobileMoney:'ሞባይል ገንዘብ', paymentConfirm:'የአመልካች ክፍያ ማረጋገጫ', paymentMethod:'የክፍያ ዘዴ', transfer:'የባንክ ተቀማጭ / ማስተላለፍ', cash:'በቢሮ ጥሬ ገንዘብ', bankUsed:'የተጠቀሙበት ባንክ', receipt:'የደረሰኝ ቁጥር', amount:'የተከፈለ መጠንና ቀን', docsHelp:'የሚከተሉትን ሰነዶች ይጫኑ። PDF፣ JPG እና PNG ይቀበላሉ።', photo:'የፓስፖርት መጠን ፎቶ', idCopy:'የመታወቂያ / ፋይዳ / ፓስፖርት ቅጂ', cv:'የተዘመነ CV ወይም የድርጅት መገለጫ', academicDocs:'የትምህርት ዲግሪ / TVET ሰርተፊኬት', licenses:'የሙያ ፈቃድ ወይም የንግድ ምዝገባ', paymentProof:'የአባልነት ክፍያ ማረጋገጫ', upload:'ፋይል ይምረጡ', noFile:'ፋይል አልተመረጠም', declarationText:'የOHPEA አባልነት እጠይቃለሁ። የሰጠሁት መረጃ እውነተኛና ሙሉ መሆኑን አረጋግጣለሁ። የማህበሩን ደንብና የሥነ ምግባር መመሪያ ለማክበር እስማማለሁ።', applicantName:'የአመልካች ሙሉ ስም', signature:'ፊርማ (ሙሉ ስም ይጻፉ)', date:'ቀን', submit:'የአባልነት ማመልከቻ ያስገቡ', submitting:'ማመልከቻ በመላክ ላይ…', success:'ማመልከቻው ደርሷል', successText:'የአባልነት ማመልከቻዎ በተሳካ ሁኔታ ተልኳል።'
+  },
+  ar: {}, fr: {}
 };
 
-// These arrays will be translated inside the component
-const industrySubSectors = ['Hotel', 'Restaurant', 'Tour Agency', 'Travel Agency', 'Tour Operator', 'Tour Guiding', 'Lodge / Resort', 'Catering', 'Events and Conference', 'Tourism Education / Training', 'Other'];
-const expertiseAreas = ['Hotel and accommodation management', 'Food preparation and culinary arts', 'Restaurant and food service', 'Tour guiding and tour operations', 'Travel agency and ticketing', 'Event and conference management', 'Tourism marketing and promotion', 'Hospitality training and education', 'Tourism research and planning', 'Customer service', 'Other'];
-const interestAreas = ['Professional training and capacity building', 'Networking and job opportunities', 'Research and tourism development', 'Advocacy for hospitality and tourism professionals', 'Quality standards and service improvement', 'Sustainable tourism', 'Business and investment opportunities', 'Other'];
+// Arabic and French use complete, explicit UI dictionaries; any omitted specialised wording
+// falls back to English rather than displaying an untranslated key.
+copy.ar = { ...copy.en, official:'استمارة طلب العضوية الرسمية', tagline:'تعزيز التميز والابتكار وريادة الأعمال في قطاع الضيافة في أوروميا', intro:'يرجى إكمال الأقسام ذات الصلة. الحقول المميزة بعلامة * مطلوبة.', s1:'1. اختيار فئة العضوية', s2:'2. المعلومات الشخصية', s3:'3. الوضع الوظيفي والتجاري الحالي', s4:'4. المؤهلات التعليمية', s5:'5. الشهادات والتراخيص المهنية', s6:'6. الخبرة العملية وريادة الأعمال', s7:'7. المهارات الخاصة واللغات', s8:'8. مجالات الخبرة والاهتمامات', s9:'9. رسوم العضوية وتفاصيل الدفع', s10:'10. قائمة المستندات الداعمة', s11:'11. الإقرار والاتفاقية', categoryHelp:'اختر الفئة التي تصف دورك الحالي في قطاع الضيافة والسياحة.', professional:'مهني في قطاع الضيافة', entrepreneur:'رائد أعمال / صاحب عمل', corporate:'عضو مؤسسي', associate:'عضو منتسب', fullName:'الاسم الكامل', gender:'الجنس', male:'ذكر', female:'أنثى', dob:'تاريخ الميلاد', nationality:'الجنسية', nationalId:'رقم الهوية / فايدا / جواز السفر', phone:'رقم الهاتف الأساسي', secondaryPhone:'رقم ثانوي / واتساب', email:'البريد الإلكتروني', region:'الإقليم / إدارة المدينة', zone:'المنطقة / الحي', woreda:'الوريدا / الكبيلي / رقم المنزل', city:'المدينة', emergencyName:'اسم جهة الاتصال للطوارئ', relationship:'صلة القرابة', emergencyPhone:'هاتف الطوارئ', alternatePhone:'هاتف طوارئ بديل', employment:'الحالة الوظيفية الحالية', employed:'موظف', selfEmployed:'عمل حر / رائد أعمال', freelancer:'مستقل / مستشار', jobSeeker:'باحث عن عمل', organization:'اسم المؤسسة / الشركة', jobTitle:'المسمى الوظيفي', workplace:'موقع العمل', yearsRole:'سنوات في الوظيفة الحالية', tin:'الرقم الضريبي / رقم تسجيل النشاط', established:'سنة التأسيس وعدد الموظفين', industry:'القطاع الفرعي للأعمال', qualification:'مستوى المؤهل', field:'مجال الدراسة / التخصص', institution:'اسم المؤسسة التعليمية', country:'الدولة', graduation:'سنة التخرج', certification:'اسم الشهادة / الترخيص', issuer:'الجهة المصدرة', issueDate:'تاريخ الإصدار', expiryDate:'تاريخ الانتهاء', experienceOrg:'اسم المؤسسة / الشركة', responsibilities:'المسؤوليات والإنجازات الرئيسية', startDate:'تاريخ البدء', endDate:'تاريخ الانتهاء', totalYears:'إجمالي سنوات الخبرة', languageProficiency:'مستوى إتقان اللغة', afaan:'الأورومية', amharic:'الأمهرية', english:'الإنجليزية', arabic:'العربية', french:'الفرنسية', technical:'مهارات برامج الضيافة والتقنية', core:'المهارات الأساسية والمتخصصة', expertise:'مجالات الخبرة', interests:'مجالات الاهتمام في OHPEA', feeNote:'يرجى تأكيد الرسوم الحالية مع أمانة OHPEA قبل الدفع.', feeCategory:'فئة العضوية', regFee:'رسوم التسجيل لمرة واحدة', annual:'الاشتراك السنوي', total:'الإجمالي عند الانضمام', bank:'تفاصيل البنك والدفع عبر الهاتف', accountHolder:'صاحب الحساب: OHPEA', platform:'البنك / منصة الدفع', account:'رقم الحساب / معرف التاجر', branch:'الفرع / ملاحظة الدفع', paymentConfirm:'تأكيد دفع مقدم الطلب', paymentMethod:'طريقة الدفع', transfer:'إيداع / تحويل بنكي', cash:'نقداً في المكتب', bankUsed:'البنك / المنصة المستخدمة', receipt:'رقم المعاملة / الإيصال', amount:'المبلغ المدفوع والتاريخ', docsHelp:'أرفق نسخاً واضحة من المستندات التالية. تُقبل ملفات PDF وJPG وPNG.', photo:'صورة شخصية بحجم جواز السفر', idCopy:'نسخة الهوية / فايدا / جواز السفر', cv:'السيرة الذاتية أو ملف الشركة', academicDocs:'الشهادات الأكاديمية / المهنية', licenses:'التراخيص المهنية أو تسجيل الشركة', paymentProof:'إثبات دفع رسوم العضوية', upload:'اختيار ملف', noFile:'لم يتم اختيار ملف', declarationText:'أتقدم بطلب العضوية في OHPEA وأقر بأن جميع المعلومات صحيحة وكاملة حسب علمي. أوافق على الالتزام بلوائح الجمعية ومدونة الأخلاق ودفع الاشتراكات السنوية المطلوبة.', applicantName:'الاسم الكامل لمقدم الطلب', signature:'التوقيع (اكتب الاسم الكامل)', date:'التاريخ', submit:'إرسال طلب العضوية', submitting:'جارٍ إرسال الطلب…', success:'تم استلام الطلب', successText:'تم إرسال طلب العضوية الرسمي بنجاح.' };
+copy.fr = { ...copy.en, official:'Formulaire officiel de demande d’adhésion', tagline:'Promouvoir l’excellence, l’innovation et l’entrepreneuriat hôtelier en Oromia', intro:'Veuillez remplir toutes les sections applicables. Les champs marqués * sont obligatoires.', s1:'1. Choix de la catégorie d’adhésion', s2:'2. Informations personnelles', s3:'3. Situation professionnelle et commerciale actuelle', s4:'4. Qualifications scolaires', s5:'5. Certifications et licences professionnelles', s6:'6. Expérience professionnelle et entrepreneuriale', s7:'7. Compétences particulières et langues', s8:'8. Domaines d’expertise et intérêts', s9:'9. Cotisations et modalités de paiement', s10:'10. Liste des pièces justificatives', s11:'11. Déclaration et accord', categoryHelp:'Choisissez la catégorie qui décrit le mieux votre rôle actuel dans l’hôtellerie et le tourisme.', professional:'Professionnel de l’hôtellerie', entrepreneur:'Entrepreneur / propriétaire', corporate:'Membre institutionnel', associate:'Membre associé', fullName:'Nom complet', gender:'Genre', male:'Homme', female:'Femme', dob:'Date de naissance', nationality:'Nationalité', nationalId:'Numéro national / Fayda / passeport', phone:'Téléphone principal', secondaryPhone:'Téléphone secondaire / WhatsApp', email:'Adresse e-mail', region:'Région / administration municipale', zone:'Zone / sous-ville', woreda:'Woreda / kebele / numéro de maison', city:'Ville', emergencyName:'Nom du contact d’urgence', relationship:'Lien avec le demandeur', emergencyPhone:'Téléphone d’urgence', alternatePhone:'Autre téléphone d’urgence', employment:'Situation professionnelle actuelle', employed:'Salarié', selfEmployed:'Indépendant / entrepreneur', freelancer:'Consultant indépendant', jobSeeker:'En recherche d’emploi', organization:'Nom de l’organisation / entreprise', jobTitle:'Intitulé du poste', workplace:'Lieu de travail', yearsRole:'Années dans le poste actuel', tin:'Numéro TIN / immatriculation', established:'Année de création et nombre d’employés', industry:'Sous-secteur d’activité', qualification:'Niveau de qualification', field:'Domaine d’études / spécialisation', institution:'Établissement / université', country:'Pays', graduation:'Année d’obtention', certification:'Nom du certificat / licence', issuer:'Organisme émetteur', issueDate:'Date de délivrance', expiryDate:'Date d’expiration', experienceOrg:'Organisation / entreprise', responsibilities:'Responsabilités et réalisations principales', startDate:'Date de début', endDate:'Date de fin', totalYears:'Nombre total d’années d’expérience', languageProficiency:'Niveau de maîtrise linguistique', afaan:'Afaan Oromoo', amharic:'Amharique', english:'Anglais', arabic:'Arabe', french:'Français', technical:'Compétences en logiciels hôteliers et techniques', core:'Compétences spécialisées', expertise:'Domaines d’expertise', interests:'Centres d’intérêt au sein de OHPEA', feeNote:'Veuillez confirmer le tarif actuel auprès du secrétariat OHPEA avant paiement.', feeCategory:'Catégorie d’adhésion', regFee:'Frais d’inscription uniques', annual:'Cotisation annuelle', total:'Total à l’adhésion', bank:'Coordonnées bancaires et paiement mobile', accountHolder:'Titulaire du compte : OHPEA', platform:'Banque / plateforme de paiement', account:'Numéro de compte / identifiant marchand', branch:'Agence / note de paiement', paymentConfirm:'Confirmation du paiement du demandeur', paymentMethod:'Mode de paiement', transfer:'Dépôt / virement bancaire', cash:'Espèces au bureau', bankUsed:'Banque / plateforme utilisée', receipt:'Référence de transaction / reçu', amount:'Montant payé et date', docsHelp:'Joignez des copies lisibles des documents suivants. Formats PDF, JPG et PNG acceptés.', photo:'Photo format passeport', idCopy:'Copie de la pièce d’identité / Fayda / passeport', cv:'CV à jour ou profil de l’entreprise', academicDocs:'Diplômes / certificats TVET', licenses:'Licences professionnelles ou immatriculation', paymentProof:'Preuve de paiement des frais d’adhésion', upload:'Choisir un fichier', noFile:'Aucun fichier sélectionné', declarationText:'Je demande mon adhésion à OHPEA et certifie que les informations fournies sont exactes et complètes. J’accepte de respecter les statuts, le code d’éthique et les règlements de l’association, et de payer les cotisations annuelles.', applicantName:'Nom complet du demandeur', signature:'Signature (saisir le nom complet)', date:'Date', submit:'Envoyer la demande d’adhésion', submitting:'Envoi de la demande…', success:'Demande reçue', successText:'Votre demande officielle d’adhésion a été envoyée avec succès.' };
 
-const fieldClassName = 'w-full rounded-xl border border-stone-200 bg-stone-50/70 px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-amber-500 dark:border-stone-700 dark:bg-stone-800/60 dark:text-stone-100';
-const labelClassName = 'mb-1.5 block text-sm font-semibold text-stone-700 dark:text-stone-300';
 
-function lookupLabel(item: { label?: Record<string, string | undefined>; localizedLabel?: string; code?: string; }, language: string) {
-  const localized = item?.label?.[language];
-  if (typeof localized === 'string') return localized;
-  if (typeof item?.label?.en === 'string') return item.label.en;
-  if (typeof item?.localizedLabel === 'string') return item.localizedLabel;
-  return typeof item?.code === 'string' ? item.code : '';
-}
+copy.en.idType = 'ID Document Type';
+copy.om.idType = 'Gosa Waraqaa Eenyummaa';
+copy.am.idType = 'የመታወቂያ ሰነድ ዓይነት';
+copy.ar.idType = 'نوع وثيقة الهوية';
+copy.fr.idType = 'Type de pièce d’identité';
+
+const input = 'w-full min-w-0 rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 outline-none transition focus:border-amber-600 focus:ring-2 focus:ring-amber-100';
+const label = 'mb-1.5 block text-xs font-semibold text-stone-700';
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="space-y-4"><h2 className="border-l-4 border-amber-500 bg-emerald-950 px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-white">{title}</h2>{children}</section>;
 
 export const Register: React.FC = () => {
-  const { t, language } = useTranslation();
-  const { lookups } = useLookups();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionComplete, setSubmissionComplete] = useState(false);
-  const [submissionError, setSubmissionError] = useState('');
-  
-  const { register, control, handleSubmit, getValues, setError, clearErrors, watch, formState: { errors } } = useForm<RegistrationValues>({ defaultValues });
+  const { t, language, isRtl } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [regionsLoading, setRegionsLoading] = useState(true);
+  const [regionsError, setRegionsError] = useState('');
 
-  const stepFields: RegistrationField[][] = [
-    ['membershipCategory', 'fullName', 'gender', 'dateOfBirth', 'nationality', 'nationalId', 'phone', 'email', 'region', 'zoneSubCity', 'woreda', 'cityTown', 'emergencyContactName', 'emergencyContactPhone'],
-    ['employmentStatus', 'organization', 'jobTitle', 'businessTin', 'yearEstablished', 'industrySubSectors', 'highestQualification', 'fieldOfStudy', 'institutionName', 'coreSkills', 'areasOfExpertise', 'areasOfInterest'],
-    ['idDocument', 'cvCompanyProfile', 'academicCertificates', 'declaration'],
-  ];
-
-  const validateStep = (step: number) => {
-    const schema = step === 1
-      ? registrationSchema.pick({ membershipCategory: true, fullName: true, gender: true, dateOfBirth: true, nationality: true, nationalId: true, phone: true, email: true, region: true, zoneSubCity: true, woreda: true, cityTown: true, emergencyContactName: true, emergencyContactPhone: true })
-      : step === 2
-        ? registrationSchema.pick({ employmentStatus: true, organization: true, jobTitle: true, businessTin: true, yearEstablished: true, industrySubSectors: true, highestQualification: true, fieldOfStudy: true, institutionName: true, coreSkills: true, areasOfExpertise: true, areasOfInterest: true })
-        : registrationSchema.pick({ idDocument: true, cvCompanyProfile: true, academicCertificates: true, declaration: true });
-    const result = schema.safeParse(getValues());
-    clearErrors();
-    if (result.success) return true;
-    for (const issue of result.error.issues) {
-      setError(issue.path[0] as RegistrationField, { type: 'validation', message: issue.message });
-    }
-    return false;
+  useEffect(() => {
+    let active = true;
+    api.getRegions()
+      .then((items) => { if (active && Array.isArray(items)) setRegions(items); })
+      .catch(() => { if (active) setRegionsError('Unable to load regions. Please refresh and try again.'); })
+      .finally(() => { if (active) setRegionsLoading(false); });
+    return () => { active = false; };
+  }, []);
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<Record<string, any>>({ defaultValues: { membershipCategory: '', gender: '', idType: 'fayda', employmentStatus: 'Employed', declaration: false } });
+  const lang = copy[language] || copy.en;
+  const tr = (key: string) => lang[key] || copy.en[key] || t(`register.${key}`, key);
+  const Field = ({ name, title, type = 'text', required = false, placeholder = '' }: { name: string; title: string; type?: string; required?: boolean; placeholder?: string }) => <label className="block"><span className={label}>{title}{required && <b className="text-red-600"> *</b>}</span><input {...register(name, { required: required ? `${title} is required` : false })} type={type} placeholder={placeholder} className={input} /></label>;
+  const Select = ({ name, title, options, required = false }: { name: string; title: string; options: [string, string][]; required?: boolean }) => <label className="block"><span className={label}>{title}{required && <b className="text-red-600"> *</b>}</span><select {...register(name, { required })} className={input}><option value="">{t('common.selectOption', 'Select an option')}</option>{options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
+  const TextArea = ({ name, title, rows = 2 }: { name: string; title: string; rows?: number }) => <label className="block"><span className={label}>{title}</span><textarea {...register(name)} rows={rows} className={input} /></label>;
+  const CheckGroup = ({ name, title, options }: { name: string; title: string; options: [string, string][] }) => <fieldset><legend className={label}>{title}</legend><div className="grid gap-2 sm:grid-cols-2">{options.map(([v, l]) => <label key={v} className="flex items-start gap-2 rounded-lg border border-stone-200 p-2.5 text-sm text-stone-700"><input type="checkbox" value={v} {...register(name)} className="mt-0.5 accent-emerald-900"/><span>{l}</span></label>)}</div></fieldset>;
+  const FileSlot = ({ name, title, multiple = false, required = false }: { name: string; title: string; multiple?: boolean; required?: boolean }) => {
+    const files = watch(name) as FileList | undefined;
+    return <label className="flex cursor-pointer flex-col gap-2 rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 p-4 transition hover:border-amber-500"><span className="flex items-center gap-2 text-sm font-semibold text-stone-800"><UploadCloud className="h-5 w-5 text-emerald-900"/>{title}{required && <b className="text-red-600"> *</b>}</span><span className="text-xs text-stone-500">PDF, JPG, JPEG, PNG · {multiple ? 'Multiple files allowed' : 'One file'}</span><span className="flex items-center gap-2 text-xs font-semibold text-emerald-900"><FileText className="h-4 w-4"/>{files?.length ? Array.from(files).map(f => f.name).join(', ') : tr('upload')}</span><input type="file" accept=".pdf,.jpg,.jpeg,.png" multiple={multiple} {...register(name, { required })} className="sr-only"/></label>;
   };
+  const onSubmit = async (values: Record<string, any>) => {
+    setBusy(true); setError('');
+    const form = document.getElementById('official-ohpea-form') as HTMLFormElement;
+    const payload = new FormData(form);
+    payload.set('preferredLanguage', ['en', 'om', 'am', 'ar', 'fr'].includes(language) ? language : 'en');
+    payload.set('fullName', values.fullName || '');
+    payload.set('email', values.email || '');
+    payload.set('phone', values.phone || '');
+    payload.set('idType', values.idType || 'fayda');
+    payload.set('idNumber', values.nationalId || '');
+    payload.set('gender', String(values.gender || '').toLowerCase());
+    payload.set('membershipCategory', values.membershipCategory || '');
+    payload.set('regionId', values.region || '');
+    payload.set('region', values.region || '');
+    payload.set('organizationName', values.organization || '');
+    payload.set('town', values.cityTown || '');
+    payload.set('consent', values.declaration ? 'true' : 'false');
 
-  const goToStep = (step: number) => {
-    setCurrentStep(step);
-    setSubmissionError('');
-    window.scrollTo({ top: 300, behavior: 'smooth' });
-  };
-
-  const submitApplication = async (values: RegistrationValues) => {
-    const validated = registrationSchema.safeParse(values);
-    if (!validated.success) {
-      const issues = validated.error.issues;
-      for (const issue of issues) {
-        setError(issue.path[0] as RegistrationField, { type: 'validation', message: issue.message });
+    // Preserve the complete official form as JSON; binary files remain multipart uploads.
+    const toJsonSafe = (value: unknown): unknown => {
+      if (typeof File !== 'undefined' && value instanceof File) return undefined;
+      if (typeof FileList !== 'undefined' && value instanceof FileList) return undefined;
+      if (Array.isArray(value)) return value.map(toJsonSafe).filter((item) => item !== undefined);
+      if (value && typeof value === 'object') {
+        return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+          .map(([key, item]) => [key, toJsonSafe(item)])
+          .filter(([, item]) => item !== undefined));
       }
-      const firstInvalidField = issues[0]?.path[0] as RegistrationField | undefined;
-      const invalidStep = stepFields.findIndex((fields) => firstInvalidField ? fields.includes(firstInvalidField) : false);
-      if (invalidStep >= 0) goToStep(invalidStep + 1);
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSubmissionError('');
-    const payload = new FormData();
-    
-    // Transform fields to match exactly what the backend expects
-    const transformed: Record<string, any> = {
-      ...validated.data,
-      gender: validated.data.gender.toLowerCase(), // Backend expects lowercase
-      graduationLevelId: validated.data.highestQualification, // Backend expects this name
-      fieldOfStudyId: validated.data.fieldOfStudy, // Backend expects this name
-      idType: 'fayda', // Default to fayda since the form doesn't ask
-      idNumber: validated.data.nationalId,
-      town: validated.data.cityTown,
-      organizationName: validated.data.organization,
-      preferredLanguage: ['en', 'om', 'am'].includes(language) ? language : 'en',
+      return value;
     };
-
-    for (const [key, value] of Object.entries(transformed)) {
-      if (isFile(value)) {
-        payload.append(key, value);
-      } else if (Array.isArray(value)) {
-        if (value.some(isFile)) {
-          value.filter(isFile).forEach((file) => payload.append(key, file));
-        } else {
-          payload.append(key, JSON.stringify(value));
-        }
-      } else if (value !== null && value !== undefined) {
-        payload.append(key, String(value));
-      }
-    }
-
-    try {
-      await api.submitRegistration(payload);
-      setSubmissionComplete(true);
-      window.scrollTo({ top: 200, behavior: 'smooth' });
-    } catch (error: unknown) {
-      setSubmissionError(error instanceof ApiError ? error.message : error instanceof Error ? error.message : 'We could not submit your application. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    const officialData = toJsonSafe({
+      ...values,
+      preferredLanguage: ['en', 'om', 'am', 'ar', 'fr'].includes(language) ? language : 'en',
+      regionId: values.region || '',
+      region: values.region || '',
+      idType: values.idType || 'fayda',
+      idNumber: values.nationalId || '',
+      // Alias structured collections to keys the backend does not overwrite
+      // when it adds its legacy flat registration columns.
+      educationRecords: values.education || [],
+      certificationRecords: values.certifications || [],
+      experienceRecords: values.experience || [],
+      languageProficiency: values.language || {},
+      paymentMethods: values.paymentMethod || [],
+    });
+    payload.set('officialFormData', JSON.stringify(officialData));
+    try { await api.submitRegistration(payload); setDone(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    catch (e) { setError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : 'Unable to submit application.'); }
+    finally { setBusy(false); }
   };
 
-  const category = watch('membershipCategory');
-  const selectedIndustry = watch('industrySubSectors') || [];
-  const selectedExpertise = watch('areasOfExpertise') || [];
-  const selectedInterests = watch('areasOfInterest') || [];
+  const regionOptions: [string, string][] = regions.map((region) => {
+    const localizedName = region.name;
+    const name = typeof localizedName === 'string'
+      ? localizedName
+      : localizedName?.[language as keyof typeof localizedName] || localizedName?.en || localizedName?.om || localizedName?.am || region.id;
+    return [region.id, name] as [string, string];
+  });
 
-  const renderCheckboxes = (field: 'industrySubSectors' | 'areasOfExpertise' | 'areasOfInterest', options: string[]) => {
-    const selected = field === 'industrySubSectors' ? selectedIndustry : field === 'areasOfExpertise' ? selectedExpertise : selectedInterests;
-    return (
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {options.map((option) => (
-          <label key={option} className="flex items-start gap-2.5 rounded-lg border border-stone-200 px-3 py-2.5 text-sm text-stone-700 dark:border-stone-700 dark:text-stone-300">
-            <input type="checkbox" value={option} checked={selected.includes(option)} {...register(field)} className="mt-0.5 accent-emerald-700" />
-            <span>{t(`register.options.${option}`, option)}</span>
-          </label>
-        ))}
-      </div>
-    );
-  };
+  const categoryOptions: [string, string][] = [['Professional', tr('professional')], ['Entrepreneur', tr('entrepreneur')], ['Corporate', tr('corporate')], ['Associate', tr('associate')]];
+  const industries: [string, string][] = [['Hotel / Resort / Lodge', tr('hotel')], ['Restaurant / Cafe / Catering', tr('restaurant')], ['Tour & Travel Agency', tr('tour')], ['Event Management & MICE', tr('events')], ['Hospitality Education & Training', tr('education')], ['Supply Chain / Hospitality Tech', tr('supply')], ['Eco-Tourism / Cultural Heritage', tr('eco')], ['Other', tr('other')]];
+  const expertise: [string, string][] = [['Hotel & Resort Operations', tr('expertise1')], ['Food & Beverage / Culinary Arts', tr('expertise2')], ['Eco-Tourism & Cultural Tourism', tr('expertise3')], ['Hospitality Entrepreneurship & Planning', tr('expertise4')], ['Marketing, Branding & Digital Presence', tr('expertise5')], ['Human Resources & Staff Training', tr('expertise6')], ['Quality Assurance & Customer Experience', tr('expertise7')], ['Financial & Revenue Management', tr('expertise8')], ['Event & Conference Management', tr('expertise9')], ['Other', tr('other')]];
+  const interests: [string, string][] = [['Networking & Business Partnerships', tr('interest1')], ['Professional Development & Workshops', tr('interest2')], ['Mentorship', tr('interest3')], ['Policy Advocacy & Industry Representation', tr('interest4')], ['Access to Finance & Investment', tr('interest5')], ['Research & Oromia Tourism Promotion', tr('interest6')], ['Volunteering on Association Committees', tr('interest7')], ['Job Placement & Career Support', tr('interest8')]];
+  const paymentOptions: [string, string][] = [['Bank Deposit/Transfer', tr('transfer')], ['Mobile Money', tr('mobileMoney')], ['Cash at Office', tr('cash')]];
+  const feeRows = [['Associate / Student Member','200 ETB (or approved rate)','500 ETB (or approved rate)','700 ETB'],['Hospitality Professional','500 ETB (or approved rate)','1,500 ETB (or approved rate)','2,000 ETB'],['Hospitality Entrepreneur / Business Owner','1,000 ETB (or approved rate)','3,000 ETB (or approved rate)','4,000 ETB'],['Corporate / Institutional Member','2,500 ETB (or approved rate)','10,000 ETB (or approved rate)','12,500 ETB']];
+  const Table = ({ headers, rows }: { headers: string[]; rows: React.ReactNode[][] }) => <div className="overflow-x-auto rounded-lg border border-stone-200"><table className="w-full min-w-[680px] border-collapse text-left text-xs"><thead className="bg-stone-100 text-emerald-950"><tr>{headers.map(h => <th key={h} className="border-b border-stone-200 p-3 font-bold">{h}</th>)}</tr></thead><tbody>{rows.map((row, i) => <tr key={i} className="odd:bg-white even:bg-stone-50">{row.map((cell, j) => <td key={j} className="border-t border-stone-200 p-2.5 align-top">{cell}</td>)}</tr>)}</tbody></table></div>;
+  const rowInput = (name: string, type = 'text') => <input {...register(name)} type={type} className={`${input} min-w-[100px]`} />;
 
-  const renderFileField = (name: 'idDocument' | 'cvCompanyProfile' | 'academicCertificates', label: string, multiple = false, required = false) => (
-    <Controller control={control} name={name} render={({ field }) => (
-      <div>
-        <label className={labelClassName}>{label}{required && <span className="text-red-600"> *</span>}</label>
-        <input type="file" multiple={multiple} accept=".pdf,.jpg,.jpeg,.png" onChange={(event) => {
-          const files = Array.from(event.target.files || []);
-          field.onChange(multiple ? files : files[0] || null);
-        }} className={`${fieldClassName} file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-800 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white`} />
-        {errors[name]?.message && <p className="mt-1 text-xs text-red-600">{errors[name]?.message}</p>}
-      </div>
-    )} />
-  );
-
-  const fieldError = (name: RegistrationField) => errors[name]?.message;
-
-  return (
-    <div className="space-y-12 pb-16">
-      <PageBanner title={t('register.title')} subtitle={t('register.subtitle')} breadcrumbs={[{ label: t('nav.home'), to: '/' }, { label: t('nav.membership'), to: '/membership' }, { label: t('register.title') }]} />
-
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        {submissionComplete ? (
-          <div className="rounded-3xl border border-emerald-200 bg-white p-8 text-center shadow-sm dark:border-emerald-900 dark:bg-stone-900 sm:p-12">
-            <CheckCircle2 className="mx-auto mb-5 h-16 w-16 text-emerald-700 dark:text-emerald-400" />
-            <h2 className="text-2xl font-bold text-stone-900 dark:text-white">{t('register.successTitle', 'Thank you')}</h2>
-            <p className="mx-auto mt-3 max-w-xl text-stone-600 dark:text-stone-300">{t('register.successDesc', 'Your application has been received and is under review.')}</p>
-          </div>
-        ) : (
-          <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-10">
-            <div className="mb-8 grid grid-cols-3 gap-3" aria-label="Registration progress">
-              {['Personal', 'Professional', 'Documents & Submit'].map((title, index) => (
-                <div key={title} className="text-center">
-                  <div className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${currentStep === index + 1 ? 'bg-amber-500 text-stone-950' : currentStep > index + 1 ? 'bg-emerald-800 text-white' : 'bg-stone-200 text-stone-500 dark:bg-stone-800 dark:text-stone-400'}`}>{index + 1}</div>
-                  <span className={`mt-2 block text-xs ${currentStep === index + 1 ? 'font-bold text-stone-900 dark:text-white' : 'text-stone-500'}`}>{t(`register.steps.${index + 1}`, title)}</span>
-                </div>
-              ))}
-            </div>
-
-            <form noValidate onSubmit={handleSubmit(submitApplication)} className="space-y-7">
-              {currentStep === 1 && (
-                <section className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-bold text-stone-900 dark:text-white">{t('register.step1Title', 'Personal Information')}</h2>
-                    <p className="mt-1 text-sm text-stone-500">{t('register.step1Desc', 'Enter your personal and contact details.')}</p>
-                  </div>
-
-                  <div>
-                    <label className={labelClassName}>{t('register.membershipCategory', 'Membership Category')} <span className="text-red-600">*</span></label>
-                    <select {...register('membershipCategory')} className={fieldClassName}>
-                      <option value="">{t('register.selectCategory', 'Select a category')}</option>
-                      {['Professional', 'Entrepreneur', 'Corporate', 'Associate'].map((item) => (
-                        <option key={item} value={item}>{t(`register.categories.${item}`, item)}</option>
-                      ))}
-                    </select>
-                    {fieldError('membershipCategory') && <p className="mt-1 text-xs text-red-600">{fieldError('membershipCategory')}</p>}
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <label className={labelClassName}>{t('register.fullName', 'Full Name')} <span className="text-red-600">*</span></label>
-                      <input {...register('fullName')} className={fieldClassName} autoComplete="name" />
-                      {fieldError('fullName') && <p className="mt-1 text-xs text-red-600">{fieldError('fullName')}</p>}
-                    </div>
-                    <fieldset>
-                      <legend className={labelClassName}>{t('register.gender', 'Gender')} <span className="text-red-600">*</span></legend>
-                      <div className="flex gap-6 py-2">
-                        {(['Male', 'Female'] as const).map((gender) => (
-                          <label key={gender} className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
-                            <input type="radio" value={gender} {...register('gender')} className="accent-emerald-700" />
-                            {t(`register.genders.${gender}`, gender)}
-                          </label>
-                        ))}
-                      </div>
-                      {fieldError('gender') && <p className="text-xs text-red-600">{fieldError('gender')}</p>}
-                    </fieldset>
-                    <div>
-                      <label className={labelClassName}>{t('register.dob', 'Date of Birth')}</label>
-                      <input type="date" {...register('dateOfBirth')} className={fieldClassName} />
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.nationality', 'Nationality')}</label>
-                      <input {...register('nationality')} className={fieldClassName} />
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.nationalId', 'National ID / Fayda Number')}</label>
-                      <input {...register('nationalId')} className={fieldClassName} />
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.phone', 'Phone')} <span className="text-red-600">*</span></label>
-                      <input {...register('phone')} type="tel" placeholder="+2519XXXXXXXX" className={fieldClassName} />
-                      {fieldError('phone') && <p className="mt-1 text-xs text-red-600">{fieldError('phone')}</p>}
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.email', 'Email')} <span className="text-red-600">*</span></label>
-                      <input {...register('email')} type="email" autoComplete="email" className={fieldClassName} />
-                      {fieldError('email') && <p className="mt-1 text-xs text-red-600">{fieldError('email')}</p>}
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.region', 'Region / City')}</label>
-                      <select {...register('region')} className={fieldClassName}>
-                        <option value="">{t('register.selectRegion', 'Select a region')}</option>
-                        {(lookups?.regions || []).map((region) => (
-                          <option key={region?.id || region?.code} value={region?.id || region?.code}>{lookupLabel(region, language)}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.zone', 'Zone / Sub-City')}</label>
-                      <input {...register('zoneSubCity')} className={fieldClassName} />
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.woreda', 'Woreda')}</label>
-                      <input {...register('woreda')} className={fieldClassName} />
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.city', 'City / Town')}</label>
-                      <input {...register('cityTown')} className={fieldClassName} />
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.emergencyName', 'Emergency Contact Name')}</label>
-                      <input {...register('emergencyContactName')} className={fieldClassName} />
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.emergencyPhone', 'Emergency Contact Phone')}</label>
-                      <input {...register('emergencyContactPhone')} type="tel" className={fieldClassName} />
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {currentStep === 2 && (
-                <section className="space-y-7">
-                  <div>
-                    <h2 className="text-xl font-bold text-stone-900 dark:text-white">{t('register.step2Title', 'Employment, Education & Expertise')}</h2>
-                    <p className="mt-1 text-sm text-stone-500">{t('register.step2Desc', 'Tell us about your professional background and interests.')}</p>
-                  </div>
-                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <div>
-                      <label className={labelClassName}>{t('register.employmentStatus', 'Current Employment Status')}</label>
-                      <select {...register('employmentStatus')} className={fieldClassName}>
-                        {['Employed', 'Self-Employed', 'Freelancer', 'Job Seeker'].map((status) => (
-                          <option key={status} value={status}>{t(`register.employment.${status}`, status)}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.org', 'Current Organization / Business Name')}</label>
-                      <input {...register('organization')} className={fieldClassName} />
-                    </div>
-                    <div>
-                      <label className={labelClassName}>{t('register.jobTitle', 'Job Title')}</label>
-                      <input {...register('jobTitle')} className={fieldClassName} />
-                    </div>
-                    {category === 'Entrepreneur' && (
-                      <>
-                        <div>
-                          <label className={labelClassName}>{t('register.businessTin', 'Business TIN')}</label>
-                          <input {...register('businessTin')} className={fieldClassName} />
-                        </div>
-                        <div>
-                          <label className={labelClassName}>{t('register.yearEstablished', 'Year Established')}</label>
-                          <input {...register('yearEstablished')} type="number" min="1900" max={new Date().getFullYear()} className={fieldClassName} />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div>
-                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">{t('register.industrySub', 'Industry Sub-Sector')}</h3>
-                    {renderCheckboxes('industrySubSectors', industrySubSectors)}
-                  </div>
-
-                  <div>
-                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">{t('register.education', 'Education')}</h3>
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                      <div>
-                        <label className={labelClassName}>{t('register.qualification', 'Highest Qualification')}</label>
-                        <select {...register('highestQualification')} className={fieldClassName}>
-                          <option value="">{t('register.selectQual', 'Select qualification')}</option>
-                          {(lookups?.graduationLevels || []).map((item) => (
-                            <option key={item?.id || item?.code} value={item?.code || item?.id}>{lookupLabel(item, language)}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className={labelClassName}>{t('register.fieldOfStudy', 'Field of Study')}</label>
-                        <select {...register('fieldOfStudy')} className={fieldClassName}>
-                          <option value="">{t('register.selectField', 'Select field')}</option>
-                          {(lookups?.fieldsOfStudy || []).map((item) => (
-                            <option key={item?.id || item?.code} value={item?.code || item?.id}>{lookupLabel(item, language)}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className={labelClassName}>{t('register.institution', 'Institution Name')}</label>
-                        <input {...register('institutionName')} className={fieldClassName} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className={labelClassName}>{t('register.coreSkills', 'Core Skills')}</label>
-                    <textarea {...register('coreSkills')} rows={3} className={fieldClassName} />
-                  </div>
-                  <div>
-                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">{t('register.expertise', 'Areas of Expertise')}</h3>
-                    {renderCheckboxes('areasOfExpertise', expertiseAreas)}
-                  </div>
-                  <div>
-                    <h3 className="mb-3 text-base font-bold text-stone-900 dark:text-white">{t('register.interests', 'Areas of Interest in OPHEA')}</h3>
-                    {renderCheckboxes('areasOfInterest', interestAreas)}
-                  </div>
-                </section>
-              )}
-
-              {currentStep === 3 && (
-                <section className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-bold text-stone-900 dark:text-white">{t('register.step3Title', 'Documents & Declaration')}</h2>
-                    <p className="mt-1 text-sm text-stone-500">{t('register.step3Desc', 'Upload the required documents and review your declaration.')}</p>
-                  </div>
-                  {renderFileField('idDocument', t('register.idDocument', 'ID Document'), false, true)}
-                  {renderFileField('cvCompanyProfile', category === 'Corporate' ? t('register.companyProfile', 'Company Profile') : t('register.cv', 'CV / Company Profile'), false, true)}
-                  {renderFileField('academicCertificates', t('register.academicCerts', 'Academic Certificates (optional)'), true)}
-                  <div>
-                    <label className="flex items-start gap-3 rounded-xl border border-stone-200 p-4 text-sm leading-relaxed text-stone-700 dark:border-stone-700 dark:text-stone-300">
-                      <input type="checkbox" {...register('declaration')} className="mt-1 accent-emerald-700" />
-                      <span>{t('register.declaration', 'I certify that all information provided in this application is true and accurate to the best of my knowledge.')}</span>
-                    </label>
-                    {fieldError('declaration') && <p className="mt-1 text-xs text-red-600">{fieldError('declaration')}</p>}
-                  </div>
-                  {submissionError && (
-                    <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
-                      <AlertCircle className="h-4 w-4 shrink-0" />
-                      {submissionError}
-                    </div>
-                  )}
-                </section>
-              )}
-
-              <div className="flex items-center justify-between border-t border-stone-100 pt-5 dark:border-stone-800">
-                {currentStep > 1 ? (
-                  <button type="button" onClick={() => goToStep(currentStep - 1)} className="inline-flex items-center gap-2 rounded-xl border border-stone-300 px-5 py-3 text-sm font-semibold text-stone-700 dark:border-stone-700 dark:text-stone-200">
-                    <ArrowLeft className="h-4 w-4" /> {t('register.back', 'Back')}
-                  </button>
-                ) : <span />}
-                {currentStep < 3 ? (
-                  <button type="button" onClick={() => validateStep(currentStep) && goToStep(currentStep + 1)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-900">
-                    {t('register.continue', 'Continue')} <ArrowRight className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <button type="submit" disabled={isSubmitting} onClick={() => validateStep(3)} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 text-sm font-bold text-stone-950 disabled:cursor-not-allowed disabled:opacity-60">
-                    {isSubmitting ? t('register.submitting', 'Submitting…') : t('register.submit', 'Submit Application')}
-                    {!isSubmitting && <CheckCircle2 className="h-4 w-4" />}
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <div className="pb-16" dir={isRtl ? 'rtl' : 'ltr'}><PageBanner title={t('register.title')} subtitle={t('register.subtitle')} breadcrumbs={[{ label: t('nav.home'), to: '/' }, { label: t('nav.membership'), to: '/membership' }, { label: tr('official') }]} />
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">{done ? <div className="rounded-2xl border border-emerald-200 bg-white p-10 text-center shadow-sm"><CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-emerald-700"/><h2 className="text-2xl font-bold text-emerald-950">{tr('success')}</h2><p className="mt-2 text-stone-600">{tr('successText')}</p></div> : <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+      <div className="border-b-4 border-amber-500 bg-emerald-950 px-5 py-7 text-white sm:px-8"><div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-amber-300">OHPEA</p><h1 className="mt-2 text-xl font-extrabold sm:text-2xl">{tr('official')}</h1><p className="mt-2 text-sm text-emerald-100">{tr('tagline')}</p></div><div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-xs">{t('register.subtitle')}</div></div></div>
+      <form id="official-ohpea-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8 p-4 sm:p-8">
+        <p className="text-sm text-stone-600">{tr('intro')}</p>
+        {Object.keys(errors).length > 0 && <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0"/>Please review the required fields marked above before submitting.</div>}
+        <Section title={tr('s1')}><p className="text-sm text-stone-600">{tr('categoryHelp')}</p><div className="grid gap-3 sm:grid-cols-2">{categoryOptions.map(([v,l])=><label key={v} className="flex items-start gap-3 rounded-xl border border-stone-200 p-4 text-sm"><input type="radio" value={v} {...register('membershipCategory',{required:true})} className="mt-1 accent-emerald-900"/><span className="font-semibold text-stone-800">{l}</span></label>)}</div>{errors.membershipCategory && <p className="text-xs text-red-600">Please select a membership category.</p>}</Section>
+        <Section title={tr('s2')}>{regionsLoading && <p className="text-xs text-stone-500">Loading regions…</p>}{regionsError && <p role="alert" className="text-xs text-red-600">{regionsError}</p>}<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><Field name="fullName" title={tr('fullName')} required/><Select name="gender" title={tr('gender')} required options={[["Male",tr('male')],["Female",tr('female')]]}/><Field name="dateOfBirth" title={tr('dob')} type="date"/><Field name="nationality" title={tr('nationality')}/><Field name="nationalId" title={tr('nationalId')} required/><Select name="idType" title={tr('idType')} options={[["fayda","Fayda ID"],["passport","Passport"],["kebele","Kebele ID"],["driver","Driver License"]]}/><Field name="phone" title={tr('phone')} type="tel" required placeholder="+251"/><Field name="secondaryPhone" title={tr('secondaryPhone')} type="tel"/><Field name="email" title={tr('email')} type="email" required/><Select name="region" title={tr('region')} required options={regionOptions}/><Field name="zoneSubCity" title={tr('zone')}/><Field name="woreda" title={tr('woreda')}/><Field name="cityTown" title={tr('city')}/><Field name="emergencyContactName" title={tr('emergencyName')}/><Field name="emergencyRelationship" title={tr('relationship')}/><Field name="emergencyContactPhone" title={tr('emergencyPhone')} type="tel"/><Field name="alternateEmergencyPhone" title={tr('alternatePhone')} type="tel"/></div></Section>
+        <Section title={tr('s3')}><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><Select name="employmentStatus" title={tr('employment')} options={[["Employed",tr('employed')],["Self-Employed",tr('selfEmployed')],["Freelancer",tr('freelancer')],["Job Seeker",tr('jobSeeker')]]}/><Field name="organization" title={tr('organization')}/><Field name="jobTitle" title={tr('jobTitle')}/><Field name="workplaceLocation" title={tr('workplace')}/><Field name="yearsInCurrentRole" title={tr('yearsRole')} type="number"/><Field name="businessTin" title={tr('tin')}/><Field name="yearEstablishedEmployees" title={tr('established')}/></div><CheckGroup name="industrySubSectors" title={tr('industry')} options={industries}/></Section>
+        <Section title={tr('s4')}><p className="text-xs text-stone-500">{tr('addRows')}</p><Table headers={['#',tr('qualification'),tr('field'),tr('institution'),tr('country'),tr('graduation')]} rows={[0,1,2].map(i=>[String(i+1),rowInput(`education[${i}].qualification`),rowInput(`education[${i}].field`),rowInput(`education[${i}].institution`),rowInput(`education[${i}].country`),rowInput(`education[${i}].graduation`,'number')])}/></Section>
+        <Section title={tr('s5')}><Table headers={['#',tr('certification'),tr('issuer'),tr('issueDate'),tr('expiryDate')]} rows={[0,1,2].map(i=>[String(i+1),rowInput(`certifications[${i}].name`),rowInput(`certifications[${i}].issuer`),rowInput(`certifications[${i}].issueDate`,'date'),rowInput(`certifications[${i}].expiryDate`,'date')])}/></Section>
+        <Section title={tr('s6')}><Table headers={['#',tr('experienceOrg'),tr('jobTitle'),tr('responsibilities'),tr('startDate'),tr('endDate')]} rows={[0,1,2,3].map(i=>[String(i+1),rowInput(`experience[${i}].organization`),rowInput(`experience[${i}].jobTitle`),rowInput(`experience[${i}].responsibilities`),rowInput(`experience[${i}].startDate`),rowInput(`experience[${i}].endDate`)])}/><div className="max-w-sm"><Field name="totalExperienceYears" title={tr('totalYears')} type="number"/></div></Section>
+        <Section title={tr('s7')}><p className="text-xs text-stone-500">{tr('languageProficiency')}</p><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{[['afaan',tr('afaan')],['amharic',tr('amharic')],['english',tr('english')],['arabic',tr('arabic')],['french',tr('french')],['otherLanguage',tr('other')]].map(([key,title])=><Field key={key} name={`language.${key}`} title={title}/>)}</div><TextArea name="technicalSkills" title={tr('technical')}/><TextArea name="coreSkills" title={tr('core')}/></Section>
+        <Section title={tr('s8')}><CheckGroup name="areasOfExpertise" title={tr('expertise')} options={expertise}/><CheckGroup name="areasOfInterest" title={tr('interests')} options={interests}/></Section>
+        <Section title={tr('s9')}><p className="text-xs text-amber-800">{tr('feeNote')}</p><Table headers={[tr('feeCategory'),tr('regFee'),tr('annual'),tr('total')]} rows={feeRows.map((r)=>r.map((v)=>v))}/><div className="space-y-2"><h3 className="text-sm font-bold text-stone-800">{tr('bank')}</h3><p className="text-xs text-stone-600">{tr('accountHolder')}</p><Table headers={[tr('platform'),tr('account'),tr('branch')]} rows={[[tr('cbo'),'[Insert Official CBO Account No.]','[Insert Branch Name]'],[tr('cbe'),'[Insert Official CBE Account No.]','[Insert Branch Name]'],[tr('awash'),'[Insert Official Awash Account No.]','[Insert Branch Name]'],[tr('mobileMoney'),'[Insert Official Shortcode / Phone]','Include Full Name in Reference']]}/></div><div className="space-y-3"><h3 className="text-sm font-bold text-stone-800">{tr('paymentConfirm')}</h3><CheckGroup name="paymentMethod" title={tr('paymentMethod')} options={paymentOptions}/><div className="grid gap-4 sm:grid-cols-2"><Field name="bankPlatformUsed" title={tr('bankUsed')}/><Field name="transactionReference" title={tr('receipt')}/><Field name="amountPaid" title={tr('amount')}/></div></div></Section>
+        <Section title={tr('s10')}><p className="text-sm text-stone-600">{tr('docsHelp')}</p><div className="grid gap-3 md:grid-cols-2"><FileSlot name="passportPhoto" title={tr('photo')}/><FileSlot name="idDocument" title={tr('idCopy')} required/><FileSlot name="cvCompanyProfile" title={tr('cv')} required/><FileSlot name="academicCertificates" title={tr('academicDocs')} multiple/><FileSlot name="professionalLicensesBusinessRegistration" title={tr('licenses')} multiple/><FileSlot name="paymentProof" title={tr('paymentProof')}/></div></Section>
+        <Section title={tr('s11')}><p className="rounded-xl bg-stone-50 p-4 text-sm leading-7 text-stone-700">{tr('declarationText')}</p><div className="grid gap-4 sm:grid-cols-3"><Field name="applicantFullName" title={tr('applicantName')} required/><Field name="applicantSignature" title={tr('signature')} required/><Field name="declarationDate" title={tr('date')} type="date" required/></div><label className="flex items-start gap-3 rounded-xl border border-stone-200 p-4 text-sm"><input type="checkbox" {...register('declaration',{required:true})} className="mt-1 accent-emerald-900"/><span>{tr('declarationText')}</span></label>{errors.declaration && <p className="text-xs text-red-600">Please accept the declaration to continue.</p>}</Section>
+        {error && <div role="alert" className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"><AlertCircle className="h-4 w-4 shrink-0"/>{error}</div>}
+        <div className="flex flex-col-reverse gap-3 border-t border-stone-200 pt-5 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-stone-500">OHPEA · Official Membership Registration</p><button type="submit" disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-7 py-3.5 text-sm font-bold text-emerald-950 shadow-sm transition hover:bg-amber-400 disabled:opacity-60">{busy ? tr('submitting') : tr('submit')}<CheckCircle2 className="h-4 w-4"/></button></div>
+      </form></div>}</div></div>;
 };
