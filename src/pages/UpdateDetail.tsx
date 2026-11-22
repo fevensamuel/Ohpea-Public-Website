@@ -166,9 +166,9 @@ export const UpdateDetail: React.FC = () => {
           )}
 
           {/* Cover image */}
-          {(item.coverImageUrl || item.coverImage) && (
+          {([item.coverImageUrl, item.coverImage].some((value) => typeof value === 'string' && value.trim().length > 0)) && (
             <img
-              src={item.coverImageUrl || item.coverImage}
+              src={[item.coverImageUrl, item.coverImage].find((value) => typeof value === 'string' && value.trim().length > 0)!}
               alt={title}
               className="w-full max-h-96 object-cover rounded-2xl border border-stone-200 dark:border-stone-800"
               loading="lazy"
