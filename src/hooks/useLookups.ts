@@ -10,13 +10,12 @@ export const useLookups = () => {
   useEffect(() => {
     let mounted = true;
     Promise.allSettled([
-      api.getLookups(),
       api.getRegions(),
       api.getGraduationLevels(),
       api.getFieldsOfStudy(),
       api.getSectors(),
     ])
-      .then(([allLookupsResult, regionsResult, graduationResult, fieldsResult, sectorsResult]) => {
+      .then(([regionsResult, graduationResult, fieldsResult, sectorsResult]) => {
         if (!mounted) return;
 
         const toLookupItem = (value: unknown, index: number) => {
@@ -49,10 +48,6 @@ export const useLookups = () => {
           };
         };
 
-        // Fetch the consolidated lookup catalogue as well as the typed endpoints;
-        // typed endpoints remain the source for the registration controls below.
-        const allLookups = allLookupsResult.status === 'fulfilled' ? allLookupsResult.value : {};
-        void allLookups;
         const regions = regionsResult.status === 'fulfilled' && Array.isArray(regionsResult.value)
           ? regionsResult.value
           : [];
@@ -71,15 +66,21 @@ export const useLookups = () => {
           ...fallbackLookups,
           regions: regions.length
             ? regions.map((region: Region, index) => {
-                const name = typeof region?.name === 'string'
-                  ? region.name
-                  : typeof region?.id === 'string'
-                    ? region.id
-                    : `Region ${index + 1}`;
+                const fallbackName = region?.id || `Region ${index + 1}`;
+                const rawName = region?.name;
+                const localizedName = typeof rawName === 'string'
+                  ? { en: rawName, om: rawName, am: rawName, ar: rawName, fr: rawName }
+                  : {
+                      en: rawName?.en || rawName?.om || rawName?.am || fallbackName,
+                      om: rawName?.om || rawName?.en || fallbackName,
+                      am: rawName?.am || rawName?.en || fallbackName,
+                      ar: rawName?.ar || rawName?.en || fallbackName,
+                      fr: rawName?.fr || rawName?.en || fallbackName,
+                    };
                 return {
                   id: region?.id || `region-${index}`,
                   code: region?.id || `region-${index}`,
-                  label: { en: name, om: name, am: name, ar: name, fr: name },
+                  label: localizedName,
                 };
               })
             : fallbackLookups.regions,
