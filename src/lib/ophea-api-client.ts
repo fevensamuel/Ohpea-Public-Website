@@ -153,6 +153,8 @@ export class OpheaPublicClient {
   // ── READ ─────────────────────────────────────────────
   getSiteSettings     = () => this.call<SiteSettings>('GET', '/public/site-settings');
   getStats            = () => this.call<PublicStats>('GET', '/public/stats');
+  getLookups          = () => this.call<Record<string, unknown>>('GET', '/public/lookups');
+  getTranslations     = (lang: string) => this.call<Record<string, string>>('GET', `/public/translations/${encodeURIComponent(lang)}`);
   getPrograms         = () => this.call<Program[]>('GET', '/public/programs');
   getProgram          = (slug: string) => this.call<Program>('GET', `/public/programs/${encodeURIComponent(slug)}`);
   getAnnouncements    = (q: { type?: Announcement['type']; limit?: number; page?: number } = {}) => this.callPaginated<Announcement>('/public/announcements', q);

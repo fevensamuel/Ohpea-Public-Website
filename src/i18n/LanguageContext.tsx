@@ -14,6 +14,7 @@ import {
   LanguageOption,
 } from './config.js';
 import { translations, TranslationDictionary, TranslationKey } from '../translations.js';
+import { api } from '../lib/ophea-api-client.js';
 
 interface LanguageContextType {
   language: StandardLanguage;
@@ -30,6 +31,15 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<StandardLanguage>(getInitialLanguage);
+  const [remoteTranslations, setRemoteTranslations] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let active = true;
+    api.getTranslations(language).then((data) => {
+      if (active && data && typeof data === 'object') setRemoteTranslations(data);
+    }).catch(() => { if (active) setRemoteTranslations({}); });
+    return () => { active = false; };
+  }, [language]);
 
   useEffect(() => {
     applyHtmlLanguageAttributes(language);
@@ -49,10 +59,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const currentOption = useMemo(() => LANGUAGES[language] || LANGUAGES[DEFAULT_LANGUAGE], [language]);
   const isRtl = currentOption.dir === 'rtl';
   const dir = currentOption.dir;
-  const dict = useMemo(() => translations[language] || translations.en, [language]);
+  const dict = useMemo(() => ({ ...(translations[language] || translations.en), ...remoteTranslations }), [language, remoteTranslations]);
 
   const t = (key: TranslationKey | string, fallback?: string): string => {
     const activeDict = (translations[language] || translations.en) as any;
+    if (remoteTranslations[key] !== undefined) return remoteTranslations[key];
     if (activeDict && activeDict[key] !== undefined) {
       return activeDict[key];
     }

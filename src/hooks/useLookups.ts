@@ -10,11 +10,13 @@ export const useLookups = () => {
   useEffect(() => {
     let mounted = true;
     Promise.allSettled([
+      api.getLookups(),
       api.getRegions(),
       api.getGraduationLevels(),
       api.getFieldsOfStudy(),
+      api.getSectors(),
     ])
-      .then(([regionsResult, graduationResult, fieldsResult]) => {
+      .then(([allLookupsResult, regionsResult, graduationResult, fieldsResult, sectorsResult]) => {
         if (!mounted) return;
 
         const toLookupItem = (value: unknown, index: number) => {
@@ -47,6 +49,10 @@ export const useLookups = () => {
           };
         };
 
+        // Fetch the consolidated lookup catalogue as well as the typed endpoints;
+        // typed endpoints remain the source for the registration controls below.
+        const allLookups = allLookupsResult.status === 'fulfilled' ? allLookupsResult.value : {};
+        void allLookups;
         const regions = regionsResult.status === 'fulfilled' && Array.isArray(regionsResult.value)
           ? regionsResult.value
           : [];
@@ -55,6 +61,10 @@ export const useLookups = () => {
           : [];
         const fieldsOfStudy = fieldsResult.status === 'fulfilled' && Array.isArray(fieldsResult.value)
           ? fieldsResult.value.map(toLookupItem).filter((item): item is NonNullable<typeof item> => item !== null)
+          : [];
+
+        const sectors = sectorsResult.status === 'fulfilled' && Array.isArray(sectorsResult.value)
+          ? sectorsResult.value.map(toLookupItem).filter((item): item is NonNullable<typeof item> => item !== null)
           : [];
 
         setLookups({
@@ -75,6 +85,7 @@ export const useLookups = () => {
             : fallbackLookups.regions,
           graduationLevels: graduationLevels.length ? graduationLevels : fallbackLookups.graduationLevels,
           fieldsOfStudy: fieldsOfStudy.length ? fieldsOfStudy : fallbackLookups.fieldsOfStudy,
+          sectors: sectors.length ? sectors : fallbackLookups.sectors,
         });
       })
       .finally(() => {
