@@ -26,6 +26,7 @@ export interface SiteSettings {
   address?: string;
   coordinates?: { lat: number; lng: number };
   social?: Record<string, string>;
+  socials?: { id: string; platform: string; label: string; url: string; enabled?: boolean; sortOrder?: number }[];
   hotlines?: string[];
   [k: string]: unknown;
 }
