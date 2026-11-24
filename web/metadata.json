@@ -1,0 +1,6 @@
+{
+  "name": "OPHEA - Oromia Hospitality & Tourism Professionals Association API & Portal",
+  "description": "Enterprise member management system, public portal, registration, contributions, and REST API for the Oromia Hospitality & Tourism Professionals Association (OPHEA).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
