@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
 
+
 @layer base {
   :root {
     --primary: #0B3D2E;
@@ -68,9 +69,9 @@
   background: var(--muted);
 }
 
-/* ==========================================================================
-   OHPEA Editorial Homepage System
-   ========================================================================== */
+
+
+/* OHPEA editorial homepage system */
 
 :root {
   --ohpea-forest: #063d2d;
@@ -301,10 +302,8 @@
   .ohpea-site-header > div:nth-child(2) { padding-block: 12px !important; }
 }
 
-/* ==========================================================================
-   Footer
-   ========================================================================== */
 
+/* Footer keeps the existing live contact, links, and newsletter integrations. */
 .ohpea-footer { background: var(--ohpea-forest-deep) !important; border: 0 !important; padding: 48px 0 22px !important; }
 .ohpea-footer .max-w-7xl { max-width: 1320px; }
 .ohpea-footer h3 { color: var(--ohpea-gold) !important; font: 600 8px 'DM Sans',sans-serif !important; letter-spacing: .16em; }
@@ -318,9 +317,9 @@
   .ohpea-footer .grid { gap: 28px !important; }
 }
 
-/* Header adjustments */
 .ohpea-site-header a.group > div:nth-child(2) > div:first-child span:first-child { color: #fff !important; }
 .ohpea-site-header a.group > div:nth-child(2) > div:first-child span:last-child { background: var(--ohpea-gold) !important; color: #17251e !important; }
+/* Keep the header language trigger white, but preserve high-contrast menu text. */
 .ohpea-home-language > div > button,
 .ohpea-home-language > div > button * { color: #fff !important; }
 .ohpea-home-language .ohpea-language-menu,
@@ -335,3 +334,103 @@
 .dark .ohpea-home-language .ohpea-language-menu { background: #0f172a !important; border-color: #334155 !important; }
 .dark .ohpea-home-language .ohpea-language-menu [aria-selected="true"],
 .dark .ohpea-home-language .ohpea-language-menu [aria-selected="true"] * { color: #fbbf24 !important; background: rgba(120,53,15,.35) !important; }
+
+
+/* ==========================================================================
+   OPHEA EDITORIAL HOMEPAGE — design tokens + effects
+   Additive only: nothing above this line is modified. Tokens are namespaced
+   so they do not alter any existing page. (Used by src/pages/Home.tsx and
+   src/components/home/*.)
+   ========================================================================== */
+@theme {
+  --color-olive: #394A2A;
+  --color-olive-dark: #2B391F;
+  --color-olive-deeper: #1F2A16;
+  --color-ochre: #8E6738;
+  --color-ochre-dark: #75542D;
+  --color-cream: #F5F2EB;
+  --color-footerbg: #F1EFEA;
+  --color-sand: #ECE7DC;
+  --color-ink: #1E2419;
+  /* Named font-display / font-body so they never collide with the legacy
+     `.font-sans` rule above, which pins Inter on the other pages. */
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: "Plus Jakarta Sans", "Noto Sans Ethiopic", "Noto Naskh Arabic", system-ui, sans-serif;
+}
+
+.ohp-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes ohp-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-7px); }
+}
+.ohp-float { animation: ohp-float 7s ease-in-out infinite; }
+
+.ohp-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1), transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ohp-reveal.ohp-in-view { opacity: 1; transform: translateY(0); }
+
+/* Institutional-name marquee: two identical groups, track moves exactly one
+   group-width (-50%) per cycle, so the loop is seamless at any viewport. */
+@keyframes ohp-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ohp-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: ohp-marquee 110s linear infinite;
+  will-change: transform;
+}
+
+/* Editorial cursor (desktop / fine pointers only) */
+.ohp-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(142, 103, 56, 0.7);
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #ffffff;
+  transition: width 0.25s ease, height 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
+}
+@media (pointer: fine) { .ohp-cursor { display: flex; } }
+.ohp-cursor.ohp-cursor-on { opacity: 1; }
+.ohp-cursor.ohp-cursor-view {
+  width: 72px;
+  height: 72px;
+  background-color: rgba(57, 74, 42, 0.88);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+.ohp-cursor.ohp-cursor-link {
+  width: 52px;
+  height: 52px;
+  background-color: rgba(142, 103, 56, 0.22);
+  border-color: #8E6738;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ohp-reveal { opacity: 1; transform: none; transition: none; }
+  .ohp-float { animation: none; }
+  .ohp-marquee-track { animation: none; }
+}

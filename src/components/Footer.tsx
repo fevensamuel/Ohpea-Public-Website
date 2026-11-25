@@ -16,28 +16,8 @@ export const Footer: React.FC = () => {
   const emails: string[] = settings.contactEmails ?? [];
   const address = localize(settings.address, language);
   const tagline = localize(settings.tagline, language) || t('brandTagline');
-  // The API publishes enabled social links as an ordered array from the admin settings.
-  // Keep compatibility with older object-shaped settings while preferring the new schema.
-  const rawSocials = settings.socials ?? settings.socialLinks ?? settings.social ?? [];
-  const socialLinks: { id: string; platform: string; label: string; url: string }[] = (
-    Array.isArray(rawSocials)
-      ? rawSocials
-      : Object.entries(rawSocials as Record<string, string>).map(([platform, url]) => ({ platform, label: platform, url, enabled: true }))
-  )
-    .filter((item: any) => item && item.enabled !== false && typeof item.url === 'string' && /^https?:\/\//i.test(item.url.trim()))
-    .sort((a: any, b: any) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0))
-    .map((item: any, index: number) => ({
-      id: String(item.id ?? `${item.platform ?? 'social'}-${index}`),
-      platform: String(item.platform ?? 'website').toLowerCase(),
-      label: String(item.label ?? item.platform ?? 'Website'),
-      url: item.url.trim(),
-    }));
-  const socialIconSlug: Record<string, string> = {
-    facebook: 'facebook', instagram: 'instagram', x: 'x', twitter: 'x', whatsapp: 'whatsapp',
-    telegram: 'telegram', youtube: 'youtube', tiktok: 'tiktok', linkedin: 'linkedin',
-    threads: 'threads', pinterest: 'pinterest', snapchat: 'snapchat', discord: 'discord',
-    reddit: 'reddit', github: 'github', vimeo: 'vimeo', wechat: 'wechat',
-  };
+  const socialLinks: [string, string][] = Object.entries((settings.socialLinks ?? settings.social ?? {}) as Record<string, string>)
+    .filter(([, v]) => typeof v === 'string' && /^https?:\/\//i.test(v));
   const currentYear = new Date().getFullYear();
 
   return (
@@ -79,26 +59,16 @@ export const Footer: React.FC = () => {
             </div>
             {socialLinks.length > 0 && (
               <div className="flex flex-wrap gap-3 pt-3">
-                {socialLinks.map(({ id, platform, label, url }) => (
+                {socialLinks.map(([name, url]) => (
                   <a
-                    key={id}
+                    key={name}
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-emerald-100/80 hover:text-amber-300 hover:border-amber-400 hover:bg-white/10 transition-colors"
-                    aria-label={`${label} (opens in a new tab)`}
-                    title={label}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-800 text-xs capitalize hover:text-amber-300 hover:border-amber-400 transition-colors"
                   >
-                    {socialIconSlug[platform] ? (
-                      <img
-                        src={`https://cdn.simpleicons.org/${socialIconSlug[platform]}/FBBF24`}
-                        alt=""
-                        aria-hidden="true"
-                        loading="lazy"
-                        className="h-[18px] w-[18px] object-contain opacity-80"
-                        onError={(event) => { event.currentTarget.style.display = 'none'; }}
-                      />
-                    ) : <Globe className="h-[18px] w-[18px]" aria-hidden="true" />}
+                    <Globe className="w-3.5 h-3.5" />
+                    {name}
                   </a>
                 ))}
               </div>

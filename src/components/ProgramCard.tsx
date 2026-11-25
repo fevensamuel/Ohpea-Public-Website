@@ -60,13 +60,9 @@ export function ProgramCard({ program, index }: { program: Program; index: numbe
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs hover:shadow-lg hover:-translate-y-1 hover:border-[#C9A24A]/50 transition-all duration-300 flex flex-col justify-between group text-start">
       <div>
-        {(() => {
-          const imageSrc = [ (program as any).imageUrl, (program as any).iconUrl ]
-            .find((value) => typeof value === 'string' && value.trim().length > 0);
-          return imageSrc ? (
-            <img src={imageSrc} alt={title} loading="lazy" className="w-full h-36 object-cover rounded-xl mb-4" />
-          ) : null;
-        })()}
+        {(typeof (program as any).imageUrl === 'string' || typeof (program as any).iconUrl === 'string') && (
+          <img src={(program as any).imageUrl || (program as any).iconUrl} alt={title} loading="lazy" className="w-full h-36 object-cover rounded-xl mb-4" />
+        )}
         <div className="flex items-center justify-between mb-4">
           <div className="w-12 h-12 rounded-xl bg-[#0B3D2E]/10 dark:bg-[#C9A24A]/10 text-[#0B3D2E] dark:text-[#C9A24A] flex items-center justify-center group-hover:scale-110 transition-transform">
             <IconComponent className="w-6 h-6" />

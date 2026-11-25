@@ -1,29 +1,26 @@
+/**
+ * Update detail — editorial redesign. Serves /updates/:slug and /news/:slug.
+ * Data: GET /public/announcements/{slug} via api.getAnnouncement(slug), seeded from
+ * fallbackAnnouncements exactly as before. Every field of the original is kept:
+ * type, publishedAt, location, organizationName, share, event countdown + start,
+ * deadline, cover image, summary, body, attachment / external links and the
+ * registration action (external registrationUrl, otherwise /register).
+ */
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Building,
-  ArrowRight,
-  ArrowLeft,
-  FileText,
-  Download,
-  Share2,
-  Loader2,
-} from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
-import { PageBanner } from '../components/PageBanner.js';
-import { ShareButtons } from '../components/ShareButtons.js';
-import { CountdownTimer } from '../components/CountdownTimer.js';
 import { formatDate } from '../utils/formatDate.js';
-import { api, Announcement } from '../lib/ophea-api-client.js';
+import { api } from '../lib/ophea-api-client.js';
 import { fallbackAnnouncements } from '../data/fallbackContent.js';
+import { EditorialShell } from '../components/home/EditorialShell.js';
+import { EditorialPageHero } from '../components/home/EditorialPageHero.js';
+import { EditorialCountdown } from '../components/home/EditorialCountdown.js';
+import { EditorialShare } from '../components/home/EditorialShare.js';
+import { SLOT, photo } from '../components/home/images.js';
 
 export const UpdateDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { t, language, isRtl } = useTranslation();
-  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+  const { t, language } = useTranslation();
 
   const [item, setItem] = useState<any>(() =>
     fallbackAnnouncements.find((a) => a.slug === slug || a.id === slug) || null
@@ -35,46 +32,34 @@ export const UpdateDetail: React.FC = () => {
     let mounted = true;
     api
       .getAnnouncement(slug)
-      .then((data) => {
-        if (mounted && data) {
-          setItem(data);
-        }
-      })
-      .catch(() => {
-        // keep fallback if available
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
+      .then((data) => { if (mounted && data) setItem(data); })
+      .catch(() => { /* keep fallback if available */ })
+      .finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
   }, [slug]);
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto py-24 px-4 text-center flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-6 h-6 animate-spin text-emerald-800" />
-        <p className="text-xs text-stone-500">Loading announcement...</p>
-      </div>
+      <EditorialShell>
+        <main id="main" className="min-h-[70svh] flex items-center justify-center">
+          <p role="status" className="text-sm text-ink/50">Loading announcement...</p>
+        </main>
+      </EditorialShell>
     );
   }
 
   if (!item) {
     return (
-      <div className="max-w-3xl mx-auto py-24 px-4 text-center">
-        <h2 className="text-2xl font-bold mb-4">{t('update.notFound')}</h2>
-        <p className="text-stone-500 mb-6">
-          {t('update.notFoundDesc')}
-        </p>
-        <Link
-          to="/updates"
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-800 text-white font-semibold text-sm"
-        >
-          {t('update.backToUpdates')}
-        </Link>
-      </div>
+      <EditorialShell>
+        <main id="main">
+          <EditorialPageHero size="sm" title={t('update.notFound')} subtitle={t('update.notFoundDesc')} crumbs={[{ label: t('nav.updates'), to: '/updates' }]} />
+          <section className="max-w-3xl mx-auto px-6 py-20 text-center">
+            <Link to="/updates" data-cursor="link" className="inline-flex border border-ink/70 px-7 py-3.5 font-display text-lg hover:bg-ink hover:text-white transition">
+              {t('update.backToUpdates')}
+            </Link>
+          </section>
+        </main>
+      </EditorialShell>
     );
   }
 
@@ -83,169 +68,118 @@ export const UpdateDetail: React.FC = () => {
   const body = typeof item.body === 'string' ? item.body : (item.body?.[language] || item.body?.en || '');
 
   const typeLabel =
-    item.type === 'news'
-      ? t('nav.news')
-      : item.type === 'event'
-      ? t('nav.events')
-      : item.type === 'vacancy'
-      ? t('nav.vacancies')
-      : item.type === 'proposal' || item.type === 'call_for_proposal'
-      ? t('nav.callsProposals')
-      : t('nav.callsResearch');
+    item.type === 'news' ? t('nav.news')
+    : item.type === 'event' ? t('nav.events')
+    : item.type === 'vacancy' ? t('nav.vacancies')
+    : item.type === 'proposal' || item.type === 'call_for_proposal' ? t('nav.callsProposals')
+    : t('nav.callsResearch');
+
+  const heroPhoto = photo(
+    item.type === 'news' ? SLOT.updateDetailNews : item.type === 'event' ? SLOT.updateDetailEvent : SLOT.updateDetailOpportunity,
+  );
+  const cover = item.coverImageUrl || item.coverImage;
+
+  const meta: Array<[string, string]> = [];
+  if (item.publishedAt) meta.push(['Published', formatDate(item.publishedAt, language)]);
+  if (item.location) meta.push(['Location', item.location]);
+  if (item.organizationName) meta.push(['Organisation', item.organizationName]);
+
+  const actionCls = 'inline-flex items-center gap-2 border border-ink/70 px-6 py-3 font-display text-lg hover:bg-ink hover:text-white transition';
 
   return (
-    <div className="space-y-12 pb-16">
-      <PageBanner
-        title={title}
-        subtitle={summary}
-        breadcrumbs={[
-          { label: t('nav.home'), to: '/' },
-          { label: t('nav.updates'), to: '/updates' },
-          { label: typeLabel },
-        ]}
-      />
+    <EditorialShell>
+      <main id="main">
+        <EditorialPageHero
+          image={heroPhoto}
+          eyebrow={typeLabel}
+          title={title}
+          subtitle={summary}
+          crumbs={[{ label: t('nav.updates'), to: '/updates' }, { label: typeLabel }]}
+        />
 
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-10 shadow-sm text-start space-y-8">
-          {/* Metadata Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-stone-100 dark:border-stone-800 text-xs">
-            <div className="flex flex-wrap items-center gap-3 text-stone-500 dark:text-stone-400">
-              <span className="px-3 py-1 rounded-full font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-amber-400">
-                {typeLabel}
-              </span>
-              {item.publishedAt && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {formatDate(item.publishedAt, language)}
-                </span>
-              )}
-              {item.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {item.location}
-                </span>
-              )}
-              {item.organizationName && (
-                <span className="flex items-center gap-1">
-                  <Building className="w-3.5 h-3.5" />
-                  {item.organizationName}
-                </span>
-              )}
-            </div>
-
-            <ShareButtons title={title} />
-          </div>
-
-          {/* Event Countdown if applicable */}
-          {item.type === 'event' && item.eventStartAt && (
-            <div className="p-6 bg-stone-50 dark:bg-stone-800/60 rounded-2xl border border-stone-200/80 dark:border-stone-700/80">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <h4 className="text-sm font-bold text-stone-900 dark:text-stone-100">
-                    {t('update.eventCountdown')}
-                  </h4>
-                  <p className="text-xs text-stone-500">
-                    {t('update.starts')}: {new Date(item.eventStartAt).toLocaleString()}
-                  </p>
-                </div>
-                <CountdownTimer targetDateString={item.eventStartAt} />
+        <article className="max-w-[1320px] mx-auto px-6 md:px-12 py-20 md:py-28 grid lg:grid-cols-12 gap-14 lg:gap-20">
+          {/* Side column: facts, countdown, deadline, share */}
+          <aside className="lg:col-span-4 space-y-8 lg:sticky lg:top-28 self-start">
+            <dl className="border-t border-ink/15">
+              <div className="py-4 border-b border-ink/15 flex justify-between gap-6">
+                <dt className="text-[11px] font-semibold tracking-[0.2em] uppercase text-ink/45">Type</dt>
+                <dd className="text-sm text-right text-ochre-dark font-semibold">{typeLabel}</dd>
               </div>
-            </div>
-          )}
+              {meta.map(([k, v]) => (
+                <div key={k} className="py-4 border-b border-ink/15 flex justify-between gap-6">
+                  <dt className="text-[11px] font-semibold tracking-[0.2em] uppercase text-ink/45">{k}</dt>
+                  <dd className="text-sm text-right text-ink/80">{v}</dd>
+                </div>
+              ))}
+            </dl>
 
-          {/* Deadline if vacancy or call */}
-          {item.deadline && (
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between">
-              <span className="font-semibold">
-                {t('update.deadline')}: {formatDate(item.deadline, language)}
-              </span>
-              <span className="font-bold uppercase tracking-wider text-[11px] bg-amber-200 dark:bg-amber-900/60 px-2 py-0.5 rounded">
-                {t('common.open')}
-              </span>
-            </div>
-          )}
-
-          {/* Cover image */}
-          {([item.coverImageUrl, item.coverImage].some((value) => typeof value === 'string' && value.trim().length > 0)) && (
-            <img
-              src={[item.coverImageUrl, item.coverImage].find((value) => typeof value === 'string' && value.trim().length > 0)!}
-              alt={title}
-              className="w-full max-h-96 object-cover rounded-2xl border border-stone-200 dark:border-stone-800"
-              loading="lazy"
-            />
-          )}
-
-          {/* Summary Lead */}
-          {summary && (
-            <p className="text-base sm:text-lg font-medium text-stone-800 dark:text-stone-200 leading-relaxed border-l-4 border-amber-500 pl-4">
-              {summary}
-            </p>
-          )}
-
-          {/* Main Body */}
-          <div className="prose dark:prose-invert max-w-none text-stone-700 dark:text-stone-300 text-sm sm:text-base leading-relaxed space-y-4">
-            <p className="whitespace-pre-line">{body}</p>
-          </div>
-
-          {(item.attachmentUrl || item.externalLink) && (
-            <div className="flex flex-wrap gap-3">
-              {item.attachmentUrl && (
-                <a
-                  href={item.attachmentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-stone-300 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800"
-                >
-                  Download attachment
-                </a>
-              )}
-              {item.externalLink && (
-                <a
-                  href={item.externalLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-stone-300 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800"
-                >
-                  More information
-                </a>
-              )}
-            </div>
-          )}
-
-          {/* Actions & Next Steps */}
-          <div className="pt-8 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center justify-between gap-4">
-            <Link
-              to="/updates"
-              className="inline-flex items-center gap-2 text-xs font-bold text-stone-600 dark:text-stone-400 hover:text-emerald-800 dark:hover:text-amber-400"
-            >
-              <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
-              <span>{t('update.backToUpdates')}</span>
-            </Link>
-
-            {item.registrationOpen && (
-              item.registrationUrl ? (
-                <a
-                  href={item.registrationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition"
-                >
-                  <span>{t('update.applyOnline')}</span>
-                  <ArrowIcon className="w-4 h-4" />
-                </a>
-              ) : (
-                <Link
-                  to="/register"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition"
-                >
-                  <span>{t('update.applyOnline')}</span>
-                  <ArrowIcon className="w-4 h-4" />
-                </Link>
-              )
+            {item.type === 'event' && item.eventStartAt && (
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-ochre mb-1">{t('update.eventCountdown')}</p>
+                <p className="text-sm text-ink/65 mb-4">{t('update.starts')}: {new Date(item.eventStartAt).toLocaleString()}</p>
+                <EditorialCountdown target={item.eventStartAt} compact />
+              </div>
             )}
+
+            {item.deadline && (
+              <div className="border border-ochre/60 bg-sand px-5 py-4 flex items-center justify-between gap-4">
+                <span className="text-sm font-semibold text-ink">{t('update.deadline')}: {formatDate(item.deadline, language)}</span>
+                <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-ochre-dark">{t('common.open')}</span>
+              </div>
+            )}
+
+            <EditorialShare title={title} />
+          </aside>
+
+          {/* Main column */}
+          <div className="lg:col-span-8">
+            {cover && (
+              <img src={cover} alt={title} loading="lazy" className="w-full max-h-[480px] object-cover mb-12" />
+            )}
+
+            {summary && (
+              <p className="font-display italic text-2xl md:text-3xl leading-snug text-olive border-l-2 border-ochre pl-6 mb-10">{summary}</p>
+            )}
+
+            {body && <p className="text-[17px] leading-[1.8] text-ink/80 whitespace-pre-line">{body}</p>}
+
+            {(item.attachmentUrl || item.externalLink) && (
+              <div className="mt-12 flex flex-wrap gap-6">
+                {item.attachmentUrl && (
+                  <a href={item.attachmentUrl} target="_blank" rel="noopener noreferrer" data-cursor="link"
+                    className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.16em] uppercase border-b border-ink/40 pb-1.5 hover:border-ink transition">
+                    Download attachment <span aria-hidden="true">↓</span>
+                  </a>
+                )}
+                {item.externalLink && (
+                  <a href={item.externalLink} target="_blank" rel="noopener noreferrer" data-cursor="link"
+                    className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.16em] uppercase border-b border-ink/40 pb-1.5 hover:border-ink transition">
+                    More information <span aria-hidden="true">↗</span>
+                  </a>
+                )}
+              </div>
+            )}
+
+            <div className="mt-16 pt-8 border-t border-ink/15 flex flex-wrap items-center justify-between gap-6">
+              <Link to="/updates" data-cursor="link" className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.16em] uppercase text-ink/70 hover:text-ink transition">
+                <span aria-hidden="true">←</span> {t('update.backToUpdates')}
+              </Link>
+
+              {item.registrationOpen && (
+                item.registrationUrl ? (
+                  <a href={item.registrationUrl} target="_blank" rel="noopener noreferrer" data-cursor="link" className={actionCls}>
+                    {t('update.applyOnline')} <span aria-hidden="true">↗</span>
+                  </a>
+                ) : (
+                  <Link to="/register" data-cursor="link" className={actionCls}>
+                    {t('update.applyOnline')} <span aria-hidden="true">↗</span>
+                  </Link>
+                )
+              )}
+            </div>
           </div>
-        </div>
-      </article>
-    </div>
+        </article>
+      </main>
+    </EditorialShell>
   );
 };

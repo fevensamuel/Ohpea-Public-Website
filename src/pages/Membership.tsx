@@ -1,208 +1,134 @@
+/**
+ * Membership — editorial redesign. All copy comes from the existing
+ * `membership.*` / `home.*` translation keys; every call to action still
+ * goes to /register.
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  CheckCircle2,
-  Award,
-  Briefcase,
-  GraduationCap,
-  Building,
-  ArrowRight,
-  ArrowLeft,
-} from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
-import { PageBanner } from '../components/PageBanner.js';
-import { SectionHeading } from '../components/SectionHeading.js';
+import { EditorialShell } from '../components/home/EditorialShell.js';
+import { EditorialPageHero } from '../components/home/EditorialPageHero.js';
+import { OdaaMark } from '../components/home/OdaaMark.js';
+import { Reveal } from '../components/home/Reveal.js';
+import { SLOT, photo } from '../components/home/images.js';
+
+const EYEBROW = 'text-[11px] font-semibold tracking-[0.22em] uppercase text-ochre';
 
 export const Membership: React.FC = () => {
-  const { t, isRtl } = useTranslation();
-  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+  const { t } = useTranslation();
 
   const categories = [
-    {
-      title: t('membership.cat1Title'),
-      icon: Award,
-      badge: t('membership.cat1Badge'),
-      desc: t('membership.cat1Desc'),
-      benefits: [
-        t('membership.cat1Benefit1'),
-        t('membership.cat1Benefit2'),
-        t('membership.cat1Benefit3'),
-        t('membership.cat1Benefit4'),
-      ],
-    },
-    {
-      title: t('membership.cat2Title'),
-      icon: Briefcase,
-      badge: t('membership.cat2Badge'),
-      desc: t('membership.cat2Desc'),
-      benefits: [
-        t('membership.cat2Benefit1'),
-        t('membership.cat2Benefit2'),
-        t('membership.cat2Benefit3'),
-      ],
-    },
-    {
-      title: t('membership.cat3Title'),
-      icon: GraduationCap,
-      badge: t('membership.cat3Badge'),
-      desc: t('membership.cat3Desc'),
-      benefits: [
-        t('membership.cat3Benefit1'),
-        t('membership.cat3Benefit2'),
-        t('membership.cat3Benefit3'),
-      ],
-    },
-    {
-      title: t('membership.cat4Title'),
-      icon: Building,
-      badge: t('membership.cat4Badge'),
-      desc: t('membership.cat4Desc'),
-      benefits: [
-        t('membership.cat4Benefit1'),
-        t('membership.cat4Benefit2'),
-        t('membership.cat4Benefit3'),
-      ],
-    },
+    { title: t('membership.cat1Title'), badge: t('membership.cat1Badge'), desc: t('membership.cat1Desc'),
+      benefits: [t('membership.cat1Benefit1'), t('membership.cat1Benefit2'), t('membership.cat1Benefit3'), t('membership.cat1Benefit4')] },
+    { title: t('membership.cat2Title'), badge: t('membership.cat2Badge'), desc: t('membership.cat2Desc'),
+      benefits: [t('membership.cat2Benefit1'), t('membership.cat2Benefit2'), t('membership.cat2Benefit3')] },
+    { title: t('membership.cat3Title'), badge: t('membership.cat3Badge'), desc: t('membership.cat3Desc'),
+      benefits: [t('membership.cat3Benefit1'), t('membership.cat3Benefit2'), t('membership.cat3Benefit3')] },
+    { title: t('membership.cat4Title'), badge: t('membership.cat4Badge'), desc: t('membership.cat4Desc'),
+      benefits: [t('membership.cat4Benefit1'), t('membership.cat4Benefit2'), t('membership.cat4Benefit3')] },
   ];
 
   const whyJoinBenefits = [
-    t('membership.whyJoinBenefit1'),
-    t('membership.whyJoinBenefit2'),
-    t('membership.whyJoinBenefit3'),
-    t('membership.whyJoinBenefit4'),
-    t('membership.whyJoinBenefit5'),
+    t('membership.whyJoinBenefit1'), t('membership.whyJoinBenefit2'), t('membership.whyJoinBenefit3'),
+    t('membership.whyJoinBenefit4'), t('membership.whyJoinBenefit5'),
+  ];
+
+  const steps = [
+    { titleKey: 'joinStep1Title', descKey: 'joinStep1Desc' },
+    { titleKey: 'joinStep2Title', descKey: 'joinStep2Desc' },
+    { titleKey: 'joinStep3Title', descKey: 'joinStep3Desc' },
+    { titleKey: 'joinStep4Title', descKey: 'joinStep4Desc' },
   ];
 
   return (
-    <div className="space-y-16 pb-16">
-      <PageBanner
-        title={t('nav.membership')}
-        subtitle={t('membership.heroSubtitle')}
-        breadcrumbs={[
-          { label: t('nav.home'), to: '/' },
-          { label: t('nav.membership') },
-        ]}
-      />
+    <EditorialShell>
+      <main id="main">
+        <EditorialPageHero
+          image={photo(SLOT.membershipHero)}
+          imageClass="object-[50%_35%]"
+          title={t('nav.membership')}
+          subtitle={t('membership.heroSubtitle')}
+          crumbs={[{ label: t('nav.membership') }]}
+        />
 
-      {/* Why Join Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6 text-start">
-            <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-              {t('nav.whyJoin')}
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-stone-900 dark:text-white leading-tight">
-              {t('membership.whyJoinTitle')}
-            </h2>
-            <p className="text-stone-600 dark:text-stone-300 leading-relaxed text-sm sm:text-base">
-              {t('membership.whyJoinDesc')}
-            </p>
-
-            <ul className="space-y-3 pt-2">
+        {/* Why join + how to join */}
+        <Reveal as="section" className="max-w-[1320px] mx-auto px-6 md:px-12 py-24 md:py-32 grid lg:grid-cols-12 gap-16 lg:gap-20 items-start">
+          <div className="lg:col-span-6">
+            <p className={`${EYEBROW} mb-4`}>{t('nav.whyJoin')}</p>
+            <h2 className="font-display text-4xl md:text-5xl leading-[1.08] mb-7">{t('membership.whyJoinTitle')}</h2>
+            <p className="text-ink/75 leading-relaxed mb-8">{t('membership.whyJoinDesc')}</p>
+            <ul className="border-t border-ink/15 mb-10">
               {whyJoinBenefits.map((b, i) => (
-                <li key={i} className="flex items-center gap-3 text-xs sm:text-sm text-stone-700 dark:text-stone-300 font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span>{b}</span>
+                <li key={i} className="flex gap-4 py-3.5 border-b border-ink/15 text-[15px] text-ink/80">
+                  <span className="text-ochre" aria-hidden="true">—</span><span>{b}</span>
                 </li>
               ))}
             </ul>
-
-            <div className="pt-4">
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-sm shadow-md transition"
-              >
-                <span>{t('hero.ctaRegister')}</span>
-                <ArrowIcon className="w-4 h-4" />
-              </Link>
-            </div>
+            <Link to="/register" data-cursor="link" className="border border-ink/70 px-8 py-3.5 font-display text-lg hover:bg-ink hover:text-white transition inline-flex items-center gap-2">
+              {t('hero.ctaRegister')} <span aria-hidden="true">↗</span>
+            </Link>
           </div>
 
-          {/* Quick steps */}
-          <div className="bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-8 space-y-6 text-start">
-            <h3 className="text-lg font-bold text-stone-900 dark:text-white">
-              {t('home.howToJoinTitle')}
-            </h3>
-            <div className="space-y-4">
-              {[
-                { titleKey: 'joinStep1Title', descKey: 'joinStep1Desc' },
-                { titleKey: 'joinStep2Title', descKey: 'joinStep2Desc' },
-                { titleKey: 'joinStep3Title', descKey: 'joinStep3Desc' },
-                { titleKey: 'joinStep4Title', descKey: 'joinStep4Desc' },
-              ].map((s, idx) => (
-                <div key={idx} className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-emerald-800 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                    {idx + 1}
+          <div className="lg:col-span-6 relative lg:pb-24">
+            <div className="overflow-hidden lg:w-[72%] lg:ml-auto">
+              <img src={photo(SLOT.membershipSide)} alt="A chef at work in a restaurant kitchen" loading="lazy" decoding="async"
+                className="w-full h-[460px] lg:h-[560px] object-cover hover:scale-[1.03] transition-transform duration-700" />
+            </div>
+            <div className="relative lg:absolute lg:left-0 lg:bottom-0 lg:w-[68%] mt-6 lg:mt-0 bg-olive text-white p-8 md:p-10 overflow-hidden">
+              <OdaaMark variant="watermark" className="absolute -right-10 -bottom-10 w-[220px] h-[200px] text-white/[0.07] pointer-events-none" />
+              <h3 className="relative font-display text-2xl md:text-3xl font-light mb-6">{t('home.howToJoinTitle')}</h3>
+              <ol className="relative space-y-5">
+                {steps.map((s, i) => (
+                  <li key={s.titleKey} className="flex gap-4">
+                    <span className="font-display text-2xl text-[#EAE2D0] w-8 shrink-0">{String(i + 1).padStart(2, '0')}</span>
+                    <div>
+                      <h4 className="text-sm font-semibold">{String(t(s.titleKey as any)).replace(/^\s*\d+\s*[.)-]\s*/, '')}</h4>
+                      <p className="text-[13px] text-white/75 mt-0.5 leading-relaxed">{t(s.descKey as any)}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Categories */}
+        <Reveal as="section" className="bg-sand py-24 md:py-32">
+          <div className="max-w-[1320px] mx-auto px-6 md:px-12">
+            <div className="grid lg:grid-cols-12 gap-10 mb-14">
+              <h2 className="lg:col-span-7 font-display text-4xl md:text-5xl leading-[1.08]">{t('membership.categoriesTitle')}</h2>
+              <p className="lg:col-span-5 text-sm leading-relaxed text-ink/70 lg:pt-6">{t('membership.categoriesSubtitle')}</p>
+            </div>
+
+            <ol className="border-t border-ink/15">
+              {categories.map((cat, idx) => (
+                <li key={idx} className="grid lg:grid-cols-12 gap-x-12 gap-y-6 py-10 border-b border-ink/15">
+                  <div className="lg:col-span-6 flex gap-6">
+                    <span className="font-display text-3xl text-ochre w-10 shrink-0">{String(idx + 1).padStart(2, '0')}</span>
+                    <div>
+                      <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-ochre mb-2">{cat.badge}</p>
+                      <h3 className="font-display text-3xl md:text-4xl leading-tight mb-3">{cat.title}</h3>
+                      <p className="text-[15px] text-ink/70 leading-relaxed max-w-md">{cat.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-stone-900 dark:text-stone-100">
-                      {t(s.titleKey as any)}
-                    </h4>
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
-                      {t(s.descKey as any)}
-                    </p>
+                  <div className="lg:col-span-6 flex flex-col justify-between gap-6">
+                    <ul className="space-y-2.5">
+                      {cat.benefits.map((b, bi) => (
+                        <li key={bi} className="flex gap-3 text-sm text-ink/80"><span className="text-ochre" aria-hidden="true">—</span><span>{b}</span></li>
+                      ))}
+                    </ul>
+                    <div>
+                      <Link to="/register" data-cursor="link" className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.16em] uppercase border-b border-ink/40 pb-1.5 hover:border-ink transition">
+                        {t('membership.applyCategory')} <span aria-hidden="true">↗</span>
+                      </Link>
+                    </div>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
-        </div>
-      </section>
-
-      {/* Membership Categories Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          title={t('membership.categoriesTitle')}
-          subtitle={t('membership.categoriesSubtitle')}
-          className="mb-12"
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.map((cat, idx) => {
-            const Icon = cat.icon;
-            return (
-              <div
-                key={idx}
-                className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 shadow-xs hover:shadow-md flex flex-col justify-between text-start"
-              >
-                <div>
-                  <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-amber-400 flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                    {cat.badge}
-                  </span>
-                  <h3 className="text-base font-bold text-stone-900 dark:text-white mt-1 mb-2">
-                    {cat.title}
-                  </h3>
-                  <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed mb-4">
-                    {cat.desc}
-                  </p>
-
-                  <div className="space-y-1.5 border-t border-stone-100 dark:border-stone-800 pt-3">
-                    {cat.benefits.map((b, bi) => (
-                      <div key={bi} className="flex items-start gap-1.5 text-[11px] text-stone-700 dark:text-stone-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>{b}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-stone-100 dark:border-stone-800">
-                  <Link
-                    to="/register"
-                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-800 dark:text-emerald-300 font-semibold text-xs transition"
-                  >
-                    <span>{t('membership.applyCategory')}</span>
-                    <ArrowIcon className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    </div>
+        </Reveal>
+      </main>
+    </EditorialShell>
   );
 };

@@ -1,19 +1,22 @@
+/**
+ * Contact — editorial redesign.
+ * Form behaviour is unchanged: same fields, same client-side validation, same
+ * POST /public/contact via api.sendContact(), same ApiError field/general error
+ * handling and success state. Office details still come from /public/site-settings.
+ */
 import React, { useState } from 'react';
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Clock,
-  Send,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-} from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
-import { PageBanner } from '../components/PageBanner.js';
 import { api, ApiError } from '../lib/ophea-api-client.js';
 import { useSiteSettings } from '../hooks/useSiteSettings.js';
 import { localize } from '../utils/localize.js';
+import { EditorialShell } from '../components/home/EditorialShell.js';
+import { EditorialPageHero } from '../components/home/EditorialPageHero.js';
+import { Reveal } from '../components/home/Reveal.js';
+import { SLOT, photo } from '../components/home/images.js';
+
+const LABEL = 'block text-[11px] font-semibold tracking-[0.18em] uppercase text-ink/55 mb-2';
+const FIELD = 'w-full bg-transparent border-b py-3 text-[15px] text-ink placeholder:text-ink/35 focus:outline-hidden transition';
+const fieldBorder = (bad: boolean) => (bad ? 'border-ochre-dark' : 'border-ink/30 focus:border-ink');
 
 export const Contact: React.FC = () => {
   const { t, language } = useTranslation();
@@ -91,258 +94,142 @@ export const Contact: React.FC = () => {
     }
   };
 
+  const detailHead = 'text-[11px] font-semibold tracking-[0.2em] uppercase text-ochre mb-3';
+  const hasOffice = !!address || phones.length > 0 || emails.length > 0 || !!workingHours;
+
   return (
-    <div className="space-y-12 pb-16">
-      <PageBanner
-        title={t('contact.title')}
-        subtitle={t('contact.subtitle')}
-        breadcrumbs={[
-          { label: t('nav.home'), to: '/' },
-          { label: t('nav.contact') },
-        ]}
-      />
+    <EditorialShell>
+      <main id="main">
+        <EditorialPageHero
+          image={photo(SLOT.contactHero)}
+          imageClass="object-[50%_60%]"
+          title={t('contact.title')}
+          subtitle={t('contact.subtitle')}
+          crumbs={[{ label: t('nav.contact') }]}
+        />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Left: Contact Info Cards */}
-          <div className="lg:col-span-5 space-y-6 text-start">
-            <div>
-              <h2 className="text-2xl font-bold text-stone-900 dark:text-white mb-2">
-                {t('contact.getInTouch')}
-              </h2>
-              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-                {t('contact.getInTouchDesc')}
-              </p>
-            </div>
+        <Reveal as="section" className="max-w-[1320px] mx-auto px-6 md:px-12 py-24 md:py-32 grid lg:grid-cols-12 gap-16 lg:gap-24">
+          {/* Office details */}
+          <div className="lg:col-span-5">
+            <h2 className="font-display text-4xl md:text-5xl leading-[1.08] mb-5">{t('contact.getInTouch')}</h2>
+            <p className="text-ink/70 leading-relaxed mb-12 max-w-md">{t('contact.getInTouchDesc')}</p>
 
-            <div className="space-y-4">
-              {/* Head Office */}
-              <div className="p-5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-xs flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div className="text-xs">
-                  <h3 className="font-bold text-stone-900 dark:text-stone-100 text-sm mb-1">
-                    {t('contact.hqTitle')}
-                  </h3>
-                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed">
-                    {address}
-                  </p>
-                  {mapLink && <a
-                    href={mapLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-emerald-700 dark:text-amber-400 font-semibold mt-2 hover:underline"
-                  >
-                    <span>{t('contact.osmLink')}</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>}
-                </div>
+            {hasOffice && (
+              <div className="border-t border-ink/15 divide-y divide-ink/15">
+                {address && (
+                  <div className="py-7">
+                    <h3 className={detailHead}>{t('contact.hqTitle')}</h3>
+                    <p className="text-ink/80 leading-relaxed">{address}</p>
+                    {mapLink && (
+                      <a href={mapLink} target="_blank" rel="noreferrer" data-cursor="link"
+                        className="inline-flex items-center gap-2 mt-3 text-xs font-semibold tracking-[0.16em] uppercase border-b border-ink/40 pb-1 hover:border-ink transition">
+                        {t('contact.osmLink')} <span aria-hidden="true">↗</span>
+                      </a>
+                    )}
+                  </div>
+                )}
+                {phones.length > 0 && (
+                  <div className="py-7">
+                    <h3 className={detailHead}>{t('contact.phoneTitle')}</h3>
+                    {phones.map((p) => (
+                      <p key={p} dir="ltr" className="text-ink/80"><a href={`tel:${p.replace(/\s+/g, '')}`} data-cursor="link" className="hover:text-ochre-dark transition">{p}</a></p>
+                    ))}
+                  </div>
+                )}
+                {emails.length > 0 && (
+                  <div className="py-7">
+                    <h3 className={detailHead}>{t('contact.emailTitle')}</h3>
+                    {emails.map((e) => (
+                      <p key={e} className="text-ink/80"><a href={`mailto:${e}`} data-cursor="link" className="hover:text-ochre-dark transition">{e}</a></p>
+                    ))}
+                  </div>
+                )}
+                {workingHours && (
+                  <div className="py-7">
+                    <h3 className={detailHead}>{t('contact.hoursTitle')}</h3>
+                    <p className="text-ink/80">{workingHours}</p>
+                  </div>
+                )}
               </div>
-
-              {/* Phones */}
-              <div className="p-5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-xs flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Phone className="w-5 h-5" />
-                </div>
-                <div className="text-xs">
-                  <h3 className="font-bold text-stone-900 dark:text-stone-100 text-sm mb-1">
-                    {t('contact.phoneTitle')}
-                  </h3>
-                  {phones.map((p) => (
-                    <p key={p} className="text-stone-600 dark:text-stone-400" dir="ltr">
-                      <a href={`tel:${p.replace(/\s+/g, '')}`} className="hover:underline">{p}</a>
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              {/* Email */}
-              <div className="p-5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-xs flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <div className="text-xs">
-                  <h3 className="font-bold text-stone-900 dark:text-stone-100 text-sm mb-1">
-                    {t('contact.emailTitle')}
-                  </h3>
-                  {emails.map((e) => (
-                    <p key={e} className="text-stone-600 dark:text-stone-400">
-                      <a href={`mailto:${e}`} className="hover:underline">{e}</a>
-                    </p>
-                  ))}
-                </div>
-              </div>
-
-              {/* Working Hours */}
-              <div className="p-5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-xs flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center shrink-0">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div className="text-xs">
-                  <h3 className="font-bold text-stone-900 dark:text-stone-100 text-sm mb-1">
-                    {t('contact.hoursTitle')}
-                  </h3>
-                  <p className="text-stone-600 dark:text-stone-400">
-                    {workingHours}
-                  </p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Right: Contact Form */}
-          <div className="lg:col-span-7">
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-10 shadow-sm text-start">
-              <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-2">
-                {t('contact.formTitle')}
-              </h3>
-              <p className="text-xs text-stone-500 mb-6">
-                {t('contact.formDesc')}
-              </p>
+          {/* Form */}
+          <div className="lg:col-span-7 bg-sand p-8 sm:p-12">
+            <h3 className="font-display text-3xl md:text-4xl mb-2">{t('contact.formTitle')}</h3>
+            <p className="text-sm text-ink/60 mb-10">{t('contact.formDesc')}</p>
 
-              {success ? (
-                <div className="p-8 text-center bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <h4 className="font-bold text-emerald-900 dark:text-emerald-200 text-base mb-2">
-                    {t('contact.sent')}
-                  </h4>
-                  <p className="text-xs text-emerald-800 dark:text-emerald-300 max-w-sm mx-auto mb-4">
-                    {t('contact.sentDesc')}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setSuccess(false)}
-                    className="px-5 py-2 rounded-xl bg-emerald-800 text-white text-xs font-semibold cursor-pointer"
-                  >
-                    {t('contact.sendAnother')}
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('contact.name')} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.fullName}
-                        onChange={(e) => updateField('fullName', e.target.value)}
-                        className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                          errors.fullName || errors.name ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                        }`}
-                        placeholder="Your full name"
-                      />
-                      {(errors.fullName || errors.name) && (
-                        <p className="text-xs text-red-500 mt-1">{errors.fullName || errors.name}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.email')} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => updateField('email', e.target.value)}
-                        className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                          errors.email ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                        }`}
-                        placeholder="name@example.com"
-                      />
-                      {errors.email && (
-                        <p className="text-xs text-red-500 mt-1">{errors.email}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('form.phone')}
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => updateField('phone', e.target.value)}
-                        className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                          errors.phone ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                        }`}
-                        placeholder="+2519XXXXXXXX"
-                      />
-                      {errors.phone && (
-                        <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                        {t('contact.subject')} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.subject}
-                        onChange={(e) => updateField('subject', e.target.value)}
-                        className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                          errors.subject ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                        }`}
-                        placeholder="Inquiry topic"
-                      />
-                      {errors.subject && (
-                        <p className="text-xs text-red-500 mt-1">{errors.subject}</p>
-                      )}
-                    </div>
+            {success ? (
+              <div role="status" className="py-10 text-center">
+                <p className="font-display italic text-3xl text-olive mb-3">{t('contact.sent')}</p>
+                <p className="text-sm text-ink/70 max-w-sm mx-auto mb-8">{t('contact.sentDesc')}</p>
+                <button type="button" onClick={() => setSuccess(false)} data-cursor="link"
+                  className="border border-ink/70 px-7 py-3 font-display text-lg hover:bg-ink hover:text-white transition">
+                  {t('contact.sendAnother')}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} noValidate className="space-y-8">
+                <div className="grid sm:grid-cols-2 gap-x-8 gap-y-8">
+                  <div>
+                    <label htmlFor="contact-name" className={LABEL}>{t('contact.name')} <span aria-hidden="true">*</span></label>
+                    <input id="contact-name" type="text" autoComplete="name" value={formData.fullName}
+                      onChange={(e) => updateField('fullName', e.target.value)}
+                      aria-invalid={!!(errors.fullName || errors.name)} aria-describedby={errors.fullName || errors.name ? 'err-name' : undefined}
+                      className={`${FIELD} ${fieldBorder(!!(errors.fullName || errors.name))}`} placeholder="Your full name" />
+                    {(errors.fullName || errors.name) && <p id="err-name" role="alert" className="text-xs text-ochre-dark mt-2">{errors.fullName || errors.name}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-1.5">
-                      {t('contact.message')} <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      rows={5}
-                      value={formData.message}
-                      onChange={(e) => updateField('message', e.target.value)}
-                      className={`w-full px-4 py-2.5 rounded-xl border bg-stone-50/50 dark:bg-stone-800/50 text-sm text-stone-900 dark:text-stone-100 outline-none transition ${
-                        errors.message ? 'border-red-500' : 'border-stone-200 dark:border-stone-700 focus:border-amber-500'
-                      }`}
-                      placeholder="Type your message here..."
-                    />
-                    {errors.message && (
-                      <p className="text-xs text-red-500 mt-1">{errors.message}</p>
-                    )}
+                    <label htmlFor="contact-email" className={LABEL}>{t('form.email')} <span aria-hidden="true">*</span></label>
+                    <input id="contact-email" type="email" autoComplete="email" value={formData.email}
+                      onChange={(e) => updateField('email', e.target.value)}
+                      aria-invalid={!!errors.email} aria-describedby={errors.email ? 'err-email' : undefined}
+                      className={`${FIELD} ${fieldBorder(!!errors.email)}`} placeholder="name@example.com" />
+                    {errors.email && <p id="err-email" role="alert" className="text-xs text-ochre-dark mt-2">{errors.email}</p>}
                   </div>
 
-                  {generalError && (
-                    <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>{generalError}</span>
-                    </div>
-                  )}
+                  <div>
+                    <label htmlFor="contact-phone" className={LABEL}>{t('form.phone')}</label>
+                    <input id="contact-phone" type="tel" autoComplete="tel" value={formData.phone}
+                      onChange={(e) => updateField('phone', e.target.value)}
+                      aria-invalid={!!errors.phone} aria-describedby={errors.phone ? 'err-phone' : undefined}
+                      className={`${FIELD} ${fieldBorder(!!errors.phone)}`} placeholder="+2519XXXXXXXX" />
+                    {errors.phone && <p id="err-phone" role="alert" className="text-xs text-ochre-dark mt-2">{errors.phone}</p>}
+                  </div>
 
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs shadow-md transition disabled:opacity-50 cursor-pointer"
-                  >
-                    {submitting ? (
-                      <span>Sending...</span>
-                    ) : (
-                      <>
-                        <span>{t('contact.send')}</span>
-                        <Send className="w-3.5 h-3.5" />
-                      </>
-                    )}
-                  </button>
-                </form>
-              )}
-            </div>
+                  <div>
+                    <label htmlFor="contact-subject" className={LABEL}>{t('contact.subject')} <span aria-hidden="true">*</span></label>
+                    <input id="contact-subject" type="text" value={formData.subject}
+                      onChange={(e) => updateField('subject', e.target.value)}
+                      aria-invalid={!!errors.subject} aria-describedby={errors.subject ? 'err-subject' : undefined}
+                      className={`${FIELD} ${fieldBorder(!!errors.subject)}`} placeholder="Inquiry topic" />
+                    {errors.subject && <p id="err-subject" role="alert" className="text-xs text-ochre-dark mt-2">{errors.subject}</p>}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="contact-message" className={LABEL}>{t('contact.message')} <span aria-hidden="true">*</span></label>
+                  <textarea id="contact-message" rows={5} value={formData.message}
+                    onChange={(e) => updateField('message', e.target.value)}
+                    aria-invalid={!!errors.message} aria-describedby={errors.message ? 'err-message' : undefined}
+                    className={`${FIELD} ${fieldBorder(!!errors.message)} resize-y`} placeholder="Type your message here..." />
+                  {errors.message && <p id="err-message" role="alert" className="text-xs text-ochre-dark mt-2">{errors.message}</p>}
+                </div>
+
+                {generalError && (
+                  <p role="alert" className="border border-ochre-dark/60 bg-cream px-4 py-3 text-sm text-ochre-dark">{generalError}</p>
+                )}
+
+                <button type="submit" disabled={submitting} data-cursor="link"
+                  className="border border-ink/80 px-9 py-3.5 font-display text-lg hover:bg-ink hover:text-white disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-inherit disabled:cursor-not-allowed transition inline-flex items-center gap-2">
+                  {submitting ? <span>Sending...</span> : <><span>{t('contact.send')}</span><span aria-hidden="true">→</span></>}
+                </button>
+              </form>
+            )}
           </div>
-        </div>
-      </div>
-    </div>
+        </Reveal>
+      </main>
+    </EditorialShell>
   );
 };

@@ -1,77 +1,68 @@
+/**
+ * Program detail — editorial redesign.
+ * Data: GET /public/programs/{slug} via api.getProgram(slug) (unchanged), merged
+ * into state exactly as before. Fields used: title, summary, body, bullets, icon,
+ * and imageUrl/iconUrl when the API supplies one.
+ */
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import {
-  BookOpen,
-  Shield,
-  Award,
-  Handshake,
-  TrendingUp,
-  Users,
-  Globe,
-  CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
-  Calendar,
-  Layers,
-} from 'lucide-react';
+import { Award, BookOpen, Globe, Handshake, Shield, TrendingUp, Users } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext.js';
-import { PageBanner } from '../components/PageBanner.js';
 import { localize } from '../utils/localize.js';
-
 import { api } from '../lib/ophea-api-client.js';
+import { EditorialShell } from '../components/home/EditorialShell.js';
+import { EditorialPageHero } from '../components/home/EditorialPageHero.js';
+import { Reveal } from '../components/home/Reveal.js';
+import { SLOT, photo } from '../components/home/images.js';
 
-const iconMap: Record<string, React.ElementType> = {
-  BookOpen,
-  Shield,
-  Award,
-  Handshake,
-  TrendingUp,
-  Users,
-  Globe,
-};
+const iconMap: Record<string, React.ElementType> = { BookOpen, Shield, Award, Handshake, TrendingUp, Users, Globe };
+const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
 export const ProgramDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { t, language, isRtl } = useTranslation();
-  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+  const { t, language } = useTranslation();
 
   const [program, setProgram] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
+  const [position, setPosition] = React.useState(0);
 
   React.useEffect(() => {
     if (!slug) return;
     let mounted = true;
     api
       .getProgram(slug)
-      .then((data) => {
-        if (mounted && data) {
-          setProgram((prev: any) => ({ ...prev, ...data }));
-        }
-      })
+      .then((data) => { if (mounted && data) setProgram((prev: any) => ({ ...prev, ...data })); })
       .catch(() => {})
       .finally(() => { if (mounted) setLoading(false); });
-
-    return () => {
-      mounted = false;
-    };
+    // position in the programs list picks the default photograph
+    api.getPrograms().then((list) => {
+      if (!mounted || !Array.isArray(list)) return;
+      const i = list.findIndex((p: any) => p.slug === slug);
+      if (i >= 0) setPosition(i);
+    }).catch(() => {});
+    return () => { mounted = false; };
   }, [slug]);
 
-  if (loading && !program) return <div className="py-24 text-center text-xs text-stone-500">…</div>;
+  if (loading && !program) {
+    return (
+      <EditorialShell>
+        <main id="main" className="min-h-[70svh] flex items-center justify-center"><p role="status" className="text-sm text-ink/50">…</p></main>
+      </EditorialShell>
+    );
+  }
 
   if (!program) {
     return (
-      <div className="max-w-3xl mx-auto py-24 px-4 text-center">
-        <h2 className="text-2xl font-bold mb-4">{t('program.notFound')}</h2>
-        <p className="text-stone-500 mb-6">
-          {t('program.notFoundDesc')}
-        </p>
-        <Link
-          to="/programs"
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-800 text-white font-semibold text-sm cursor-pointer"
-        >
-          {t('program.viewAll')}
-        </Link>
-      </div>
+      <EditorialShell>
+        <main id="main">
+          <EditorialPageHero size="sm" title={t('program.notFound')} subtitle={t('program.notFoundDesc')} crumbs={[{ label: t('nav.programs'), to: '/programs' }]} />
+          <section className="max-w-3xl mx-auto px-6 py-20 text-center">
+            <Link to="/programs" data-cursor="link" className="inline-flex border border-ink/70 px-7 py-3.5 font-display text-lg hover:bg-ink hover:text-white transition">
+              {t('program.viewAll')}
+            </Link>
+          </section>
+        </main>
+      </EditorialShell>
     );
   }
 
@@ -79,93 +70,60 @@ export const ProgramDetail: React.FC = () => {
   const title = localize(program.title, language);
   const summary = localize(program.summary, language);
   const body = localize(program.body, language);
-
-  const bullets = (program.bullets || []).map((b: any) => localize(b, language)).filter(Boolean);
+  const bullets: string[] = (program.bullets || []).map((b: any) => localize(b, language)).filter(Boolean);
+  const heroImage = str(program.imageUrl) || str(program.iconUrl) || photo(SLOT.programDetail[position % SLOT.programDetail.length]);
 
   return (
-    <div className="space-y-16 pb-16">
-      <PageBanner
-        title={title}
-        subtitle={summary}
-        breadcrumbs={[
-          { label: t('nav.home'), to: '/' },
-          { label: t('nav.programs'), to: '/programs' },
-          { label: title },
-        ]}
-      />
+    <EditorialShell>
+      <main id="main">
+        <EditorialPageHero
+          image={heroImage}
+          title={title}
+          subtitle={summary}
+          crumbs={[{ label: t('nav.programs'), to: '/programs' }, { label: title }]}
+        />
 
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-8 sm:p-12 shadow-sm text-start space-y-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-stone-100 dark:border-stone-800">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-amber-400 flex items-center justify-center">
-                <Icon className="w-8 h-8" />
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-white">
-                  {title}
-                </h1>
-              </div>
+        <Reveal as="section" className="max-w-[1320px] mx-auto px-6 md:px-12 py-24 md:py-32 grid lg:grid-cols-12 gap-14 lg:gap-20">
+          <div className="lg:col-span-7">
+            <div className="flex items-center gap-4 mb-6">
+              <span className="w-12 h-12 rounded-full border border-ink/25 text-ochre flex items-center justify-center" aria-hidden="true"><Icon className="w-5 h-5" /></span>
+              <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-ochre">{t('program.overviewScope')}</p>
             </div>
+            {body && <p className="font-display text-2xl md:text-[30px] font-light leading-[1.4] text-ink/90 whitespace-pre-line">{body}</p>}
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-              {t('program.overviewScope')}
-            </h3>
-            <p className="text-base text-stone-700 dark:text-stone-300 leading-relaxed">
-              {body}
-            </p>
-          </div>
-
-          {/* Key Deliverables */}
-          {bullets.length > 0 && <div className="space-y-4 pt-4 border-t border-stone-100 dark:border-stone-800">
-            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-              {t('program.keyDeliverables')}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {bullets.map((b: string, i: number) => (
-                <div
-                  key={i}
-                  className="p-5 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/60 flex items-start gap-3"
-                >
-                  <CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                  <span className="text-xs sm:text-sm font-medium text-stone-800 dark:text-stone-200">
-                    {b}
-                  </span>
-                </div>
-              ))}
+          {bullets.length > 0 && (
+            <div className="lg:col-span-5">
+              <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-ochre mb-5">{t('program.keyDeliverables')}</p>
+              <ol className="border-t border-ink/15">
+                {bullets.map((b, i) => (
+                  <li key={i} className="flex gap-5 py-5 border-b border-ink/15">
+                    <span className="font-display text-xl text-ochre w-8 shrink-0">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="text-[15px] leading-relaxed text-ink/80">{b}</span>
+                  </li>
+                ))}
+              </ol>
             </div>
-          </div>}
+          )}
+        </Reveal>
 
-          {/* Action Call */}
-          <div className="pt-8 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h4 className="font-bold text-stone-900 dark:text-white text-sm">
-                {t('program.getInvolved')}
-              </h4>
-              <p className="text-xs text-stone-500">
-                {t('program.getInvolvedDesc')}
-              </p>
+        <section className="relative bg-olive text-white overflow-hidden">
+          <div className="max-w-[1320px] mx-auto px-6 md:px-12 py-20 md:py-24 flex flex-col md:flex-row md:items-center justify-between gap-10">
+            <div className="max-w-xl">
+              <h2 className="font-display text-4xl md:text-5xl font-light leading-[1.08] mb-3">{t('program.getInvolved')}</h2>
+              <p className="text-white/80 leading-relaxed">{t('program.getInvolvedDesc')}</p>
             </div>
-            <div className="flex gap-3 w-full sm:w-auto">
-              <Link
-                to="/register"
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-xs transition cursor-pointer"
-              >
-                <span>{t('hero.ctaRegister')}</span>
-                <ArrowIcon className="w-4 h-4" />
+            <div className="flex flex-wrap items-center gap-6">
+              <Link to="/register" data-cursor="link" className="border border-white/85 px-8 py-3.5 font-display text-lg hover:bg-white hover:text-olive transition inline-flex items-center gap-2">
+                {t('hero.ctaRegister')} <span aria-hidden="true">↗</span>
               </Link>
-              <Link
-                to="/programs"
-                className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-xs font-semibold hover:bg-stone-50 dark:hover:bg-stone-800 transition cursor-pointer"
-              >
+              <Link to="/programs" data-cursor="link" className="text-xs font-semibold tracking-[0.16em] uppercase border-b border-white/50 pb-1.5 hover:border-white transition">
                 {t('program.allPrograms')}
               </Link>
             </div>
           </div>
-        </div>
-      </section>
-    </div>
+        </section>
+      </main>
+    </EditorialShell>
   );
 };
